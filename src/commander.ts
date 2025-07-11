@@ -42,30 +42,17 @@ export class Commander {
    * @param segments - OneBot12消息段数组
    * @returns 返回匹配结果数组或null
    */
-  match(segments: MessageSegment[]): any {
+  match(segments: MessageSegment[]): any[] {
     const result = SegmentMatcher.match(this.tokens, segments, this.typedLiteralFields);
-    
-    if (result) {
-      // 匹配成功，将所有参数按顺序展开，最后一个参数为remaining
-      const paramValues = Object.values(result.params);
-      const args = [...paramValues, result.remaining];
-      
-      // 执行回调链
-      const next = (value: any): any => {
-        const callback = this.callbacks.shift();
-        if (!callback) return value;
-        return next(callback(value));
-      }
-      return next(args);
-    } else {
-      // 匹配失败，执行回调链
-      const next = (value: any): any => {
-        const callback = this.callbacks.shift();
-        if (!callback) return value;
-        return next(callback(value));
-      }
-      return next(null);
+    // 执行回调链
+    const next = (...values: any[]): any[] => {
+      const callback = this.callbacks.shift();
+      if (!callback) return values;
+      return next(callback(...values));
     }
+    if (!result)  return next()
+    const args = [result.params, ...result.remaining];
+    return next(...args);
   }
 
   /**

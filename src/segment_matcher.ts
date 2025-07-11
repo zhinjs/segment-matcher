@@ -24,7 +24,7 @@ export class SegmentMatcher {
       // eslint-disable-next-line no-console
       console.log('DEBUG patternToken:', patternToken);
       const segment = segmentIndex < segmentsCopy.length ? segmentsCopy[segmentIndex] : undefined;
-      
+    
       if (segment) {
         const matchResult = SegmentMatcher.matchToken(patternToken, segment, segmentsCopy, segmentIndex, typedLiteralFieldMap);
         if (matchResult.success) {
@@ -45,13 +45,13 @@ export class SegmentMatcher {
           const defaultValue = patternToken.defaultValue !== undefined ? patternToken.defaultValue : 
                              (patternToken.dataType === 'text' ? '' : null);
           result.addParam(patternToken.name, defaultValue);
-        }
+      }
         patternIndex++;
         // 对于可选参数，如果当前segment不匹配，我们跳过它
         if (segment) {
           segmentIndex++;
         }
-      } else {
+    } else {
         // 必需参数不匹配，返回null
         return null;
       }
@@ -90,15 +90,12 @@ export class SegmentMatcher {
       
       matched.push({ type: SEGMENT_TYPES.TEXT, data: { text: matchedText } });
       
-      // 将剩余文本插入到下一个位置，去除前导空白符
+      // 将剩余文本插入到下一个位置
       if (afterText) {
-        afterText = afterText.replace(/^\s+/, '');
-        if (afterText) {
-          segments.splice(segmentIndex + 1, 0, {
-            type: SEGMENT_TYPES.TEXT,
-            data: { text: afterText }
-          });
-        }
+        segments.splice(segmentIndex + 1, 0, {
+          type: SEGMENT_TYPES.TEXT,
+          data: { text: afterText }
+        });
       }
       
       return {
@@ -132,7 +129,7 @@ export class SegmentMatcher {
                 const matched: MessageSegment[] = [];
                 if (beforeText) {
                   matched.push({ type: SEGMENT_TYPES.TEXT, data: { text: beforeText } });
-                }
+      }
                 matched.push({ type: SEGMENT_TYPES.TEXT, data: { text: matchedText } });
                 if (afterText) {
                   segments.splice(segmentIndex + 1, 0, {
@@ -145,8 +142,8 @@ export class SegmentMatcher {
                   matched,
                   newSegmentIndex: segmentIndex + 1
                 };
-              }
-            }
+    }
+  }
           }
         } else {
           // 处理单个字段
@@ -176,8 +173,8 @@ export class SegmentMatcher {
               matched,
               newSegmentIndex: segmentIndex + 1
             };
-          }
-        }
+  }
+}
       }
     }
     return { success: false };

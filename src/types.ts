@@ -52,4 +52,4 @@ export interface MatchResponse {
 }
 
 // 回调函数类型
-export type CallbackFunction = (value: any) => any; 
+export type CallbackFunction = (...values:any[]) => any;

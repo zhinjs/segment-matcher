@@ -39,6 +39,15 @@ npm install onebot-commander
 
 ## 使用方法
 
+### 返回格式说明
+
+`commander.match()` 方法返回一个数组，格式为 `[params, ...remaining]`：
+
+- `params`: 包含所有匹配参数的对象，键为参数名，值为参数值
+- `remaining`: 剩余的消息段数组（如果有的话）
+
+匹配失败时返回空数组 `[]`。
+
 ### 基本用法
 
 ```javascript
@@ -46,15 +55,17 @@ import { match, Commander } from 'onebot-commander';
 
 // 使用便捷函数
 const command = match("hello <name:text>");
-const result = command.match([
+const [params] = command.match([
   { type: 'text', data: { text: 'hello world' } }
 ]);
+console.log(params.name); // 'world'
 
 // 使用类
 const matcher = new Commander("ping [message:text]");
-const result = matcher.match([
+const [params] = matcher.match([
   { type: 'text', data: { text: 'ping hello' } }
 ]);
+console.log(params.message); // 'hello'
 
 // 使用自定义类型化字面量字段映射
 const customMatcher = new Commander("test<arg1:text>", {
@@ -79,7 +90,7 @@ const segments1 = [
 ];
 const result1 = matcher1.match(segments1);
 console.log(result1);
-// 输出: [[{ type: 'text', data: { text: 'world' } }]]
+// 输出: [{}, { type: 'text', data: { text: ' world' } }]
 
 // 示例 2: 必需参数提取
 const matcher2 = match('hello <name:text>');
@@ -88,7 +99,7 @@ const segments2 = [
 ];
 const result2 = matcher2.match(segments2);
 console.log(result2);
-// 输出: ['Alice', []]
+// 输出: [{ name: 'Alice' }]
 
 // 示例 3: 可选参数（提供时）
 const matcher3 = match('ping [message:text]');
@@ -97,7 +108,7 @@ const segments3 = [
 ];
 const result3 = matcher3.match(segments3);
 console.log(result3);
-// 输出: ['hello', []]
+// 输出: [{ message: 'hello' }]
 
 // 示例 4: 可选参数（未提供时）
 const segments4 = [
@@ -105,7 +116,7 @@ const segments4 = [
 ];
 const result4 = matcher3.match(segments4);
 console.log(result4);
-// 输出: null
+// 输出: []
 ```
 
 ### 复杂模式匹配
@@ -119,7 +130,7 @@ const segments5 = [
 ];
 const result5 = matcher5.match(segments5);
 console.log(result5);
-// 输出: ['123', { type: 'face', data: { id: 1 } }, []]
+// 输出: [{ arg1: '123', arg2: { type: 'face', data: { id: 1 } } }]
 
 // 示例 6: 类型化字面量匹配
 const matcher6 = match('{text:test}<arg1:text>');
@@ -128,7 +139,7 @@ const segments6 = [
 ];
 const result6 = matcher6.match(segments6);
 console.log(result6);
-// 输出: ['123', []]
+// 输出: [{ arg1: '123' }]
 
 // 示例 7: 表情类型化字面量（匹配失败）
 const matcher7 = match('{face:2}<arg1:text>');
@@ -138,7 +149,7 @@ const segments7 = [
 ];
 const result7 = matcher7.match(segments7);
 console.log(result7);
-// 输出: null
+// 输出: []
 
 // 示例 8: 图片类型化字面量（匹配成功）
 const matcher8 = match('{image:test.jpg}<arg1:text>');
@@ -148,7 +159,7 @@ const segments8 = [
 ];
 const result8 = matcher8.match(segments8);
 console.log(result8);
-// 输出: ['123', []]
+// 输出: [{ arg1: '123' }]
 
 // 示例 9: @类型化字面量
 const matcher9 = match('{at:123456}<arg1:text>');
@@ -158,7 +169,7 @@ const segments9 = [
 ];
 const result9 = matcher9.match(segments9);
 console.log(result9);
-// 输出: ['123', []]
+// 输出: [{ arg1: '123' }]
 ```
 
 ### 剩余参数匹配
@@ -175,12 +186,13 @@ const segments10 = [
 const result10 = matcher10.match(segments10);
 console.log(result10);
 // 输出: [
-//   [
-//     { type: 'text', data: { text: 'hello' } },
-//     { type: 'face', data: { id: 1 } },
-//     { type: 'image', data: { file: 'test.jpg' } }
-//   ],
-//   []
+//   {
+//     rest: [
+//       { type: 'text', data: { text: 'hello' } },
+//       { type: 'face', data: { id: 1 } },
+//       { type: 'image', data: { file: 'test.jpg' } }
+//     ]
+//   }
 // ]
 
 // 示例 11: 类型化剩余参数
@@ -195,14 +207,14 @@ const segments11 = [
 const result11 = matcher11.match(segments11);
 console.log(result11);
 // 输出: [
-//   [
-//     { type: 'face', data: { id: 1 } },
-//     { type: 'face', data: { id: 2 } }
-//   ],
-//   [
-//     { type: 'text', data: { text: 'hello' } },
-//     { type: 'image', data: { file: 'test.jpg' } }
-//   ]
+//   {
+//     rest: [
+//       { type: 'face', data: { id: 1 } },
+//       { type: 'face', data: { id: 2 } }
+//     ]
+//   },
+//   { type: 'text', data: { text: 'hello' } },
+//   { type: 'image', data: { file: 'test.jpg' } }
 // ]
 ```
 
@@ -216,7 +228,7 @@ const segments12a = [
 ];
 const result12a = matcher12.match(segments12a);
 console.log(result12a);
-// 输出: [{ id: 1 }, []]
+// 输出: [{ mFace: { id: 1 } }]
 
 const segments12b = [
   { type: SEGMENT_TYPES.TEXT, data: { text: 'foo' } },
@@ -224,7 +236,7 @@ const segments12b = [
 ];
 const result12b = matcher12.match(segments12b);
 console.log(result12b);
-// 输出: [{ type: 'face', data: { id: 2 } }, []]
+// 输出: [{ mFace: { type: 'face', data: { id: 2 } } }]
 
 // 示例 13: 文本默认值
 const matcher13 = match('foo[msg:text=hello]');
@@ -233,17 +245,20 @@ const segments13 = [
 ];
 const result13 = matcher13.match(segments13);
 console.log(result13);
-// 输出: ['hello', []]
+// 输出: [{ msg: 'hello' }]
 ```
 
 ### 链式回调处理
 
+回调函数的参数格式为 `(params, ...remaining)`，其中：
+- `params`: 包含所有匹配参数的对象
+- `remaining`: 剩余的消息段数组
+
 ```javascript
 // 示例 14: 链式处理
 const matcher14 = match('test<arg1:text>')
-  .action((result) => {
-    const [arg1] = result;
-    return arg1;
+  .action((params) => {
+    return params.arg1;
   })
   .action((arg1) => {
     return arg1.toUpperCase();
@@ -252,7 +267,7 @@ const matcher14 = match('test<arg1:text>')
 const segments14 = [
   { type: SEGMENT_TYPES.TEXT, data: { text: 'test123' } }
 ];
-const result14 = matcher14.match(segments14);
+const [result14] = matcher14.match(segments14);
 console.log(result14);
 // 输出: '123'
 ```
@@ -267,7 +282,7 @@ const segments15 = [
 ];
 const result15 = matcher15.match(segments15);
 console.log(result15);
-// 输出: null
+// 输出: []
 
 // 示例 16: 必需参数缺失
 const matcher16 = match('hello <name:text>');
@@ -276,7 +291,7 @@ const segments16 = [
 ];
 const result16 = matcher16.match(segments16);
 console.log(result16);
-// 输出: null
+// 输出: []
 
 // 示例 17: 类型不匹配（string类型已移除）
 const matcher17 = match('hello <name:string>');
@@ -285,7 +300,7 @@ const segments17 = [
 ];
 const result17 = matcher17.match(segments17);
 console.log(result17);
-// 输出: null
+// 输出: []
 ```
 
 ### 链式回调处理
@@ -296,27 +311,17 @@ import { Commander } from 'onebot-commander';
 const command = new Commander("test<arg1:text>[arg2:face]");
 
 command
-  .action((result) => {
-    if (result) {
-      const [arg1, arg2, remaining] = result;
-      console.log('arg1:', arg1);        // '123'
-      console.log('arg2:', arg2);        // { type: 'face', data: { id: 1 } }
-      console.log('remaining:', remaining); // []
-      return arg1;
-    }
-    return null;
+  .action((params) => {
+    console.log('arg1:', params.arg1);        // '123'
+    console.log('arg2:', params.arg2);        // { type: 'face', data: { id: 1 } }
+    return params.arg1;
   })
   .action((arg1) => {
-    if (arg1) {
-      console.log('处理arg1:', arg1.toUpperCase());
-      return arg1.length;
-    }
-    return null;
+    console.log('处理arg1:', arg1.toUpperCase());
+    return arg1.length;
   })
   .action((length) => {
-    if (length) {
-      console.log('arg1长度:', length);
-    }
+    console.log('arg1长度:', length);
   })
   .match([
     { type: 'text', data: { text: 'test123' } },
@@ -330,18 +335,12 @@ command
 const command = new Commander("hello <name:text>");
 
 command
-  .action((result) => {
-    if (result) {
-      const [name, remaining] = result;
-      console.log('匹配成功:', name);
-      return name;
-    } else {
-      console.log('匹配失败');
-      return null;
-    }
+  .action((params) => {
+    console.log('匹配成功:', params.name);
+    return params.name;
   })
   .match([
-    { type: 'face', data: { id: 1 } }  // 不匹配
+    { type: 'face', data: { id: 1 } }  // 不匹配，返回空数组 []
   ]);
 ```
 
@@ -443,7 +442,7 @@ new Commander(pattern, typedLiteralFields?)
 
 添加回调函数到处理链。
 
-- `callback` (Function): 回调函数，接收上一个回调的返回值
+- `callback` (Function): 回调函数，接收参数 `(params, ...remaining)`，其中 `params` 是参数对象，`remaining` 是剩余消息段
 - 返回: Commander 实例，支持链式调用
 
 ##### match(segments)
@@ -451,7 +450,7 @@ new Commander(pattern, typedLiteralFields?)
 匹配消息段并执行回调链。
 
 - `segments` (Array): OneBot12消息段数组
-- 返回: 匹配结果数组 `[...params, remaining]` 或 `null`
+- 返回: 匹配结果数组 `[params, ...remaining]` 或空数组 `[]`（匹配失败时）
 
 ##### getTokens()
 
