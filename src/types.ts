@@ -51,5 +51,7 @@ export interface MatchResponse {
   newSegmentIndex?: number;
 }
 
-// 回调函数类型
-export type CallbackFunction = (...values:any[]) => any;
+// 回调函数类型（支持同步和异步）
+export type CallbackFunction<T extends any[] = any[], R=any> = 
+  | ((...values: T) => R)
+  | ((...values: T) => Promise<R>);

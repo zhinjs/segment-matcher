@@ -29,7 +29,7 @@ export class Commander {
 
   /**
    * 添加回调函数
-   * @param callback - 回调函数
+   * @param callback - 回调函数（支持同步和异步）
    * @returns 当前实例，支持链式调用
    */
   action(callback: CallbackFunction): Commander {
@@ -38,9 +38,9 @@ export class Commander {
   }
 
   /**
-   * 匹配消息段，根据结果调用回调
+   * 匹配消息段，根据结果调用回调（同步版本）
    * @param segments - OneBot12消息段数组
-   * @returns 返回匹配结果数组或null
+   * @returns 返回匹配结果数组或空数组
    */
   match(segments: MessageSegment[]): any[] {
     const result = SegmentMatcher.match(this.tokens, segments, this.typedLiteralFields);
@@ -50,7 +50,31 @@ export class Commander {
       if (!callback) return values;
       return next(callback(...values));
     }
-    if (!result)  return next()
+    if (!result) return next();
+    const args = [result.params, ...result.remaining];
+    return next(...args);
+  }
+
+  /**
+   * 匹配消息段，根据结果调用回调（异步版本）
+   * @param segments - OneBot12消息段数组
+   * @returns 返回Promise<匹配结果数组>或Promise<空数组>
+   */
+  async matchAsync(segments: MessageSegment[]): Promise<any[]> {
+    const result = SegmentMatcher.match(this.tokens, segments, this.typedLiteralFields);
+    // 执行异步回调链
+    const next = async (...values: any[]): Promise<any[]> => {
+      const callback = this.callbacks.shift();
+      if (!callback) return values;
+      const result = callback(...values);
+      // 检查是否为Promise
+      if (result instanceof Promise) {
+        return next(await result);
+      } else {
+        return next(result);
+      }
+    }
+    if (!result) return next();
     const args = [result.params, ...result.remaining];
     return next(...args);
   }

@@ -1,6 +1,6 @@
 {
   "name": "onebot-commander",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "OneBot12 Message Segment Commander - TypeScript version with dual ESM/CJS format support",
   "type": "module",
   "main": "./dist/cjs/index.cjs",
@@ -28,7 +28,7 @@
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
     "clean": "rm -rf dist",
-    "pub":"npm run build && npm publish",
+    "pub":"npm publish",
     "prepublishOnly": "npm run build"
   },
   "keywords": ["onebot", "commander", "typescript", "message-segments", "esm", "cjs", "dual-format", "universal"],

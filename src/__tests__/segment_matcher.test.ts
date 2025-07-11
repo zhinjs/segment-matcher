@@ -222,10 +222,10 @@ describe('Commander', () => {
   describe('Action chaining', () => {
     test('should support action chaining', () => {
       const matcher = match('test<arg1:text>')
-        .action((result) => {
+        .action((result: { arg1: string }) => {
           return result.arg1;
         })
-        .action((arg1) => {
+        .action((arg1: string) => {
           return arg1.toUpperCase();
         });
 
@@ -235,6 +235,61 @@ describe('Commander', () => {
       
       const [str] = matcher.match(segments);
       expect(str).toEqual('123');
+    });
+
+    test('should support async action chaining', async () => {
+      const matcher = match('test<arg1:text>')
+        .action(async (result: { arg1: string }) => {
+          // 模拟异步操作
+          await new Promise(resolve => setTimeout(resolve, 10));
+          return result.arg1;
+        })
+        .action(async (arg1: string) => {
+          // 模拟异步操作
+          await new Promise(resolve => setTimeout(resolve, 10));
+          return arg1.toUpperCase();
+        });
+
+      const segments: MessageSegment[] = [
+        { type: SEGMENT_TYPES.TEXT, data: { text: 'test123' } }
+      ];
+      
+      const [str] = await matcher.matchAsync(segments);
+      expect(str).toEqual('123');
+    });
+
+    test('should support mixed sync and async actions', async () => {
+      const matcher = match('test<arg1:text>')
+        .action((result: { arg1: string }) => {
+          return result.arg1;
+        })
+        .action(async (arg1: string) => {
+          await new Promise(resolve => setTimeout(resolve, 10));
+          return arg1.toUpperCase();
+        })
+        .action((upperArg1: string) => {
+          return upperArg1.length;
+        });
+
+      const segments: MessageSegment[] = [
+        { type: SEGMENT_TYPES.TEXT, data: { text: 'test123' } }
+      ];
+      
+      const [length] = await matcher.matchAsync(segments);
+      expect(length).toEqual(3);
+    });
+
+    test('should handle async actions with error', async () => {
+      const matcher = match('test<arg1:text>')
+        .action(async (result: { arg1: string }) => {
+          throw new Error('Async error');
+        });
+
+      const segments: MessageSegment[] = [
+        { type: SEGMENT_TYPES.TEXT, data: { text: 'test123' } }
+      ];
+      
+      await expect(matcher.matchAsync(segments)).rejects.toThrow('Async error');
     });
   });
 

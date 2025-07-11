@@ -254,8 +254,10 @@ console.log(result13);
 - `params`: 包含所有匹配参数的对象
 - `remaining`: 剩余的消息段数组
 
+支持同步和异步回调函数：
+
 ```javascript
-// 示例 14: 链式处理
+// 示例 14: 同步链式处理
 const matcher14 = match('test<arg1:text>')
   .action((params) => {
     return params.arg1;
@@ -270,36 +272,77 @@ const segments14 = [
 const [result14] = matcher14.match(segments14);
 console.log(result14);
 // 输出: '123'
+
+// 示例 15: 异步链式处理
+const matcher15 = match('test<arg1:text>')
+  .action(async (params) => {
+    // 模拟异步操作
+    await new Promise(resolve => setTimeout(resolve, 100));
+    return params.arg1;
+  })
+  .action(async (arg1) => {
+    // 模拟异步操作
+    await new Promise(resolve => setTimeout(resolve, 100));
+    return arg1.toUpperCase();
+  });
+
+const segments15 = [
+  { type: SEGMENT_TYPES.TEXT, data: { text: 'test123' } }
+];
+const [result15] = await matcher15.matchAsync(segments15);
+console.log(result15);
+// 输出: '123'
+
+// 示例 16: 混合同步和异步处理
+const matcher16 = match('test<arg1:text>')
+  .action((params) => {
+    return params.arg1;
+  })
+  .action(async (arg1) => {
+    // 模拟异步操作
+    await new Promise(resolve => setTimeout(resolve, 100));
+    return arg1.toUpperCase();
+  })
+  .action((upperArg1) => {
+    return upperArg1.length;
+  });
+
+const segments16 = [
+  { type: SEGMENT_TYPES.TEXT, data: { text: 'test123' } }
+];
+const [length] = await matcher16.matchAsync(segments16);
+console.log(length);
+// 输出: 3
 ```
 
 ### 匹配失败情况
 
 ```javascript
-// 示例 15: 模式不匹配
-const matcher15 = match('hello <name:text>');
-const segments15 = [
-  { type: SEGMENT_TYPES.FACE, data: { id: 1 } }
-];
-const result15 = matcher15.match(segments15);
-console.log(result15);
-// 输出: []
-
-// 示例 16: 必需参数缺失
-const matcher16 = match('hello <name:text>');
-const segments16 = [
-  { type: SEGMENT_TYPES.TEXT, data: { text: 'hello' } }
-];
-const result16 = matcher16.match(segments16);
-console.log(result16);
-// 输出: []
-
-// 示例 17: 类型不匹配（string类型已移除）
-const matcher17 = match('hello <name:string>');
+// 示例 17: 模式不匹配
+const matcher17 = match('hello <name:text>');
 const segments17 = [
-  { type: SEGMENT_TYPES.TEXT, data: { text: 'hello world' } }
+  { type: SEGMENT_TYPES.FACE, data: { id: 1 } }
 ];
 const result17 = matcher17.match(segments17);
 console.log(result17);
+// 输出: []
+
+// 示例 18: 必需参数缺失
+const matcher18 = match('hello <name:text>');
+const segments18 = [
+  { type: SEGMENT_TYPES.TEXT, data: { text: 'hello' } }
+];
+const result18 = matcher18.match(segments18);
+console.log(result18);
+// 输出: []
+
+// 示例 19: 类型不匹配（string类型已移除）
+const matcher19 = match('hello <name:string>');
+const segments19 = [
+  { type: SEGMENT_TYPES.TEXT, data: { text: 'hello world' } }
+];
+const result19 = matcher19.match(segments19);
+console.log(result19);
 // 输出: []
 ```
 
@@ -308,6 +351,7 @@ console.log(result17);
 ```javascript
 import { Commander } from 'onebot-commander';
 
+// 同步处理
 const command = new Commander("test<arg1:text>[arg2:face]");
 
 command
@@ -327,6 +371,28 @@ command
     { type: 'text', data: { text: 'test123' } },
     { type: 'face', data: { id: 1 } }
   ]);
+
+// 异步处理
+const asyncCommand = new Commander("test<arg1:text>");
+
+asyncCommand
+  .action(async (params) => {
+    // 模拟异步操作
+    await new Promise(resolve => setTimeout(resolve, 100));
+    console.log('异步处理arg1:', params.arg1);
+    return params.arg1.toUpperCase();
+  })
+  .action(async (upperArg1) => {
+    // 模拟异步操作
+    await new Promise(resolve => setTimeout(resolve, 100));
+    console.log('异步处理结果:', upperArg1);
+    return upperArg1.length;
+  })
+  .matchAsync([
+    { type: 'text', data: { text: 'test123' } }
+  ]).then(([length]) => {
+    console.log('最终结果:', length);
+  });
 ```
 
 ### 匹配失败处理
@@ -442,15 +508,22 @@ new Commander(pattern, typedLiteralFields?)
 
 添加回调函数到处理链。
 
-- `callback` (Function): 回调函数，接收参数 `(params, ...remaining)`，其中 `params` 是参数对象，`remaining` 是剩余消息段
+- `callback` (Function): 回调函数，接收参数 `(params, ...remaining)`，其中 `params` 是参数对象，`remaining` 是剩余消息段。支持同步和异步函数。
 - 返回: Commander 实例，支持链式调用
 
 ##### match(segments)
 
-匹配消息段并执行回调链。
+匹配消息段并执行回调链（同步版本）。
 
 - `segments` (Array): OneBot12消息段数组
 - 返回: 匹配结果数组 `[params, ...remaining]` 或空数组 `[]`（匹配失败时）
+
+##### matchAsync(segments)
+
+匹配消息段并执行回调链（异步版本）。
+
+- `segments` (Array): OneBot12消息段数组
+- 返回: Promise<匹配结果数组>或Promise<空数组>（匹配失败时）
 
 ##### getTokens()
 
