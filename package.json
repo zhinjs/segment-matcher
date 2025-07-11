@@ -1,0 +1,44 @@
+{
+  "name": "onebot-commander",
+  "version": "1.0.1",
+  "description": "OneBot12 Message Segment Commander - TypeScript version with dual ESM/CJS format support",
+  "type": "module",
+  "main": "./dist/cjs/index.cjs",
+  "module": "./dist/esm/index.js",
+  "types": "./dist/esm/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/esm/index.js",
+      "require": "./dist/cjs/index.cjs",
+      "types": "./dist/esm/index.d.ts"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "npm run build:esm && npm run build:cjs && npm run add-js-extensions && npm run rename-cjs-files && npm run fix-cjs-requires",
+    "build:esm": "tsc -p tsconfig.esm.json",
+    "build:cjs": "tsc -p tsconfig.cjs.json",
+    "add-js-extensions": "node scripts/add-js-extensions.js",
+    "rename-cjs-files": "node scripts/rename-cjs-files.js",
+    "fix-cjs-requires": "node scripts/fix-cjs-requires.js",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
+    "clean": "rm -rf dist",
+    "pub":"npm run build && npm publish",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": ["onebot", "commander", "typescript", "message-segments", "esm", "cjs", "dual-format", "universal"],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/jest": "^29.5.8",
+    "@types/node": "^20.8.10",
+    "jest": "^29.7.0",
+    "ts-jest": "^29.1.1",
+    "typescript": "^5.2.2"
+  }
+}
