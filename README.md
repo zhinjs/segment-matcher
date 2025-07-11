@@ -1,82 +1,96 @@
-# OneBot12 Message Segment Matcher
+# 🤖 OneBot Commander
 
-一个用于匹配和解析OneBot12消息段的ESM/CJS Node.js工具，支持链式回调处理。
-- <a href="https://pkg-size.dev/onebot-commander"><img src="https://pkg-size.dev/badge/install/62783" title="Install size for onebot-commander"></a> <a href="https://pkg-size.dev/onebot-commander"><img src="https://pkg-size.dev/badge/bundle/6396" title="Bundle size for onebot-commander"></a>
-## 特性
+> 一个强大的 OneBot12 消息段命令解析器，支持 TypeScript 和双格式（ESM/CJS）输出
 
-- 🎯 **模式匹配**: 支持复杂的消息段模式匹配
-- 🔧 **参数提取**: 自动提取匹配的参数
-- 📝 **类型化字面量**: 支持 `{type:value}` 格式的类型化字面量
-- ⚡ **链式回调**: 支持 `action()` 方法链式处理匹配结果
-- 🎨 **灵活语法**: 支持必需参数 `<param:type>` 和可选参数 `[param:type]`
-- 🔍 **文本分割**: 智能分割文本段，支持部分匹配
-- 📦 **双格式支持**: 同时支持 ESM 和 CommonJS 格式，兼容各种 Node.js 环境
+[![npm version](https://badge.fury.io/js/onebot-commander.svg)](https://badge.fury.io/js/onebot-commander)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.2.2-blue.svg)](https://www.typescriptlang.org/)
 
-## 格式支持
+## ✨ 特性
 
-本项目同时支持 **ESM (ES Modules)** 和 **CommonJS** 两种格式：
+- 🚀 **高性能**: 基于 TypeScript 构建，编译为原生 JavaScript
+- 📦 **双格式支持**: 同时支持 ESM 和 CommonJS 模块格式
+- 🔧 **灵活配置**: 支持自定义类型化字面量字段映射
+- ⚡ **异步支持**: 支持同步和异步回调函数
+- 🎯 **精确匹配**: 支持必需参数、可选参数、剩余参数和类型化字面量
+- 🔗 **链式调用**: 支持链式回调处理
+- 🛡️ **类型安全**: 完整的 TypeScript 类型定义
 
-### ESM 格式 (推荐)
-```javascript
-import { Commander, match } from 'onebot-commander';
-```
-
-### CommonJS 格式
-```javascript
-const { Commander, match } = require('onebot-commander');
-```
-
-### 自动格式选择
-- 在 ESM 环境中自动使用 ESM 格式
-- 在 CommonJS 环境中自动使用 CommonJS 格式
-- 无需手动指定导入格式
-
-## 安装
+## 📦 安装
 
 ```bash
 npm install onebot-commander
 ```
 
-## 使用方法
+## 🚀 快速开始
 
-### 返回格式说明
-
-`commander.match()` 方法返回一个数组，格式为 `[params, ...remaining]`：
-
-- `params`: 包含所有匹配参数的对象，键为参数名，值为参数值
-- `remaining`: 剩余的消息段数组（如果有的话）
-
-匹配失败时返回空数组 `[]`。
-
-### 基本用法
+### 基础用法
 
 ```javascript
-import { match, Commander } from 'onebot-commander';
+import { match, SEGMENT_TYPES } from 'onebot-commander';
 
-// 使用便捷函数
-const command = match("hello <name:text>");
-const [params] = command.match([
-  { type: 'text', data: { text: 'hello world' } }
-]);
+// 简单文本匹配
+const matcher = match('hello <name:text>');
+const segments = [
+  { type: SEGMENT_TYPES.TEXT, data: { text: 'hello world' } }
+];
+
+const [params] = matcher.match(segments);
 console.log(params.name); // 'world'
-
-// 使用类
-const matcher = new Commander("ping [message:text]");
-const [params] = matcher.match([
-  { type: 'text', data: { text: 'ping hello' } }
-]);
-console.log(params.message); // 'hello'
-
-// 使用自定义类型化字面量字段映射
-const customMatcher = new Commander("test<arg1:text>", {
-  text: 'text',
-  face: 'id',
-  image: ['file', 'url'],
-  at: 'user_id'
-});
 ```
 
-## 输入输出示例
+### 链式回调处理
+
+```javascript
+import { Commander } from 'onebot-commander';
+
+const command = new Commander("test<arg1:text>[arg2:face]");
+
+command
+  .action((params) => {
+    console.log('arg1:', params.arg1);        // '123'
+    console.log('arg2:', params.arg2);        // { type: 'face', data: { id: 1 } }
+    return params.arg1;
+  })
+  .action((arg1) => {
+    console.log('处理arg1:', arg1.toUpperCase());
+    return arg1.length;
+  })
+  .action((length) => {
+    console.log('arg1长度:', length);
+  })
+  .match([
+    { type: 'text', data: { text: 'test123' } },
+    { type: 'face', data: { id: 1 } }
+  ]);
+```
+
+### 异步处理
+
+```javascript
+const asyncCommand = new Commander("test<arg1:text>");
+
+asyncCommand
+  .action(async (params) => {
+    // 模拟异步操作
+    await new Promise(resolve => setTimeout(resolve, 100));
+    console.log('异步处理arg1:', params.arg1);
+    return params.arg1.toUpperCase();
+  })
+  .action(async (upperArg1) => {
+    // 模拟异步操作
+    await new Promise(resolve => setTimeout(resolve, 100));
+    console.log('异步处理结果:', upperArg1);
+    return upperArg1.length;
+  })
+  .matchAsync([
+    { type: 'text', data: { text: 'test123' } }
+  ]).then(([length]) => {
+    console.log('最终结果:', length);
+  });
+```
+
+## 📖 详细用法
 
 ### 基础文本匹配
 
@@ -346,71 +360,7 @@ console.log(result19);
 // 输出: []
 ```
 
-### 链式回调处理
-
-```javascript
-import { Commander } from 'onebot-commander';
-
-// 同步处理
-const command = new Commander("test<arg1:text>[arg2:face]");
-
-command
-  .action((params) => {
-    console.log('arg1:', params.arg1);        // '123'
-    console.log('arg2:', params.arg2);        // { type: 'face', data: { id: 1 } }
-    return params.arg1;
-  })
-  .action((arg1) => {
-    console.log('处理arg1:', arg1.toUpperCase());
-    return arg1.length;
-  })
-  .action((length) => {
-    console.log('arg1长度:', length);
-  })
-  .match([
-    { type: 'text', data: { text: 'test123' } },
-    { type: 'face', data: { id: 1 } }
-  ]);
-
-// 异步处理
-const asyncCommand = new Commander("test<arg1:text>");
-
-asyncCommand
-  .action(async (params) => {
-    // 模拟异步操作
-    await new Promise(resolve => setTimeout(resolve, 100));
-    console.log('异步处理arg1:', params.arg1);
-    return params.arg1.toUpperCase();
-  })
-  .action(async (upperArg1) => {
-    // 模拟异步操作
-    await new Promise(resolve => setTimeout(resolve, 100));
-    console.log('异步处理结果:', upperArg1);
-    return upperArg1.length;
-  })
-  .matchAsync([
-    { type: 'text', data: { text: 'test123' } }
-  ]).then(([length]) => {
-    console.log('最终结果:', length);
-  });
-```
-
-### 匹配失败处理
-
-```javascript
-const command = new Commander("hello <name:text>");
-
-command
-  .action((params) => {
-    console.log('匹配成功:', params.name);
-    return params.name;
-  })
-  .match([
-    { type: 'face', data: { id: 1 } }  // 不匹配，返回空数组 []
-  ]);
-```
-
-## 模式语法
+## 📝 模式语法
 
 ### 基本语法
 
@@ -487,7 +437,7 @@ const customMatcher = new Commander("{image:avatar.png}<name:text>", {
 });
 ```
 
-## API参考
+## 🔧 API参考
 
 ### Commander
 
@@ -546,38 +496,6 @@ new Commander(pattern, typedLiteralFields?)
 }
 ```
 
-#### 静态方法
-
-##### resolve(pattern, segments)
-
-创建已解析的匹配器实例。
-
-- `pattern` (string): 匹配模式
-- `segments` (Array): 消息段数组
-- 返回: Commander 实例
-
-##### reject(pattern, error)
-
-创建已拒绝的匹配器实例。
-
-- `pattern` (string): 匹配模式
-- `error` (Error): 错误对象
-- 返回: Commander 实例
-
-##### all(matchers)
-
-等待所有匹配器完成。
-
-- `matchers` (Array<Commander>): 匹配器数组
-- 返回: Array 所有匹配器的结果
-
-##### race(matchers)
-
-等待任一匹配器完成。
-
-- `matchers` (Array<SegmentMatcher>): 匹配器数组
-- 返回: 第一个完成的匹配器结果
-
 ### 便捷函数
 
 #### match(pattern, typedLiteralFields?)
@@ -588,7 +506,7 @@ new Commander(pattern, typedLiteralFields?)
 - `typedLiteralFields` (Record<string, string | string[]>): 类型化字面量字段映射，可选参数
 - 返回: Commander实例
 
-## 运行测试
+## 🧪 测试
 
 ```bash
 # 运行测试
@@ -601,11 +519,7 @@ npm run test:watch
 npm run test:coverage
 ```
 
-## 许可证
-
-MIT 
-
-## 构建和开发
+## 🏗️ 构建和开发
 
 ### 构建双格式输出
 
@@ -662,4 +576,16 @@ npm run clean
 ```bash
 # 构建并运行测试
 npm run prepublishOnly
-``` 
+```
+
+## 📄 许可证
+
+MIT License
+
+## 🤝 贡献
+
+欢迎提交 Issue 和 Pull Request！
+
+## ⭐ 支持
+
+如果这个项目对你有帮助，请给它一个星标！ 
