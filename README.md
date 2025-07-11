@@ -1,7 +1,7 @@
 # OneBot12 Message Segment Matcher
 
 一个用于匹配和解析OneBot12消息段的ESM/CJS Node.js工具，支持链式回调处理。
-
+- <a href="https://pkg-size.dev/onebot-commander"><img src="https://pkg-size.dev/badge/install/62783" title="Install size for onebot-commander"></a> <a href="https://pkg-size.dev/onebot-commander"><img src="https://pkg-size.dev/badge/bundle/6396" title="Bundle size for onebot-commander"></a>
 ## 特性
 
 - 🎯 **模式匹配**: 支持复杂的消息段模式匹配
@@ -63,6 +63,229 @@ const customMatcher = new Commander("test<arg1:text>", {
   image: ['file', 'url'],
   at: 'user_id'
 });
+```
+
+## 输入输出示例
+
+### 基础文本匹配
+
+```javascript
+import { match, SEGMENT_TYPES } from 'onebot-commander';
+
+// 示例 1: 简单文本匹配
+const matcher1 = match('hello');
+const segments1 = [
+  { type: SEGMENT_TYPES.TEXT, data: { text: 'hello world' } }
+];
+const result1 = matcher1.match(segments1);
+console.log(result1);
+// 输出: [[{ type: 'text', data: { text: 'world' } }]]
+
+// 示例 2: 必需参数提取
+const matcher2 = match('hello <name:text>');
+const segments2 = [
+  { type: SEGMENT_TYPES.TEXT, data: { text: 'hello Alice' } }
+];
+const result2 = matcher2.match(segments2);
+console.log(result2);
+// 输出: ['Alice', []]
+
+// 示例 3: 可选参数（提供时）
+const matcher3 = match('ping [message:text]');
+const segments3 = [
+  { type: SEGMENT_TYPES.TEXT, data: { text: 'ping hello' } }
+];
+const result3 = matcher3.match(segments3);
+console.log(result3);
+// 输出: ['hello', []]
+
+// 示例 4: 可选参数（未提供时）
+const segments4 = [
+  { type: SEGMENT_TYPES.TEXT, data: { text: 'ping' } }
+];
+const result4 = matcher3.match(segments4);
+console.log(result4);
+// 输出: null
+```
+
+### 复杂模式匹配
+
+```javascript
+// 示例 5: 多参数混合模式
+const matcher5 = match('test<arg1:text>[arg2:face]');
+const segments5 = [
+  { type: SEGMENT_TYPES.TEXT, data: { text: 'test123' } },
+  { type: SEGMENT_TYPES.FACE, data: { id: 1 } }
+];
+const result5 = matcher5.match(segments5);
+console.log(result5);
+// 输出: ['123', { type: 'face', data: { id: 1 } }, []]
+
+// 示例 6: 类型化字面量匹配
+const matcher6 = match('{text:test}<arg1:text>');
+const segments6 = [
+  { type: SEGMENT_TYPES.TEXT, data: { text: 'test123' } }
+];
+const result6 = matcher6.match(segments6);
+console.log(result6);
+// 输出: ['123', []]
+
+// 示例 7: 表情类型化字面量（匹配失败）
+const matcher7 = match('{face:2}<arg1:text>');
+const segments7 = [
+  { type: SEGMENT_TYPES.FACE, data: { id: 1 } },
+  { type: SEGMENT_TYPES.TEXT, data: { text: '123' } }
+];
+const result7 = matcher7.match(segments7);
+console.log(result7);
+// 输出: null
+
+// 示例 8: 图片类型化字面量（匹配成功）
+const matcher8 = match('{image:test.jpg}<arg1:text>');
+const segments8 = [
+  { type: SEGMENT_TYPES.IMAGE, data: { file: 'test.jpg' } },
+  { type: SEGMENT_TYPES.TEXT, data: { text: '123' } }
+];
+const result8 = matcher8.match(segments8);
+console.log(result8);
+// 输出: ['123', []]
+
+// 示例 9: @类型化字面量
+const matcher9 = match('{at:123456}<arg1:text>');
+const segments9 = [
+  { type: SEGMENT_TYPES.AT, data: { user_id: 123456 } },
+  { type: SEGMENT_TYPES.TEXT, data: { text: '123' } }
+];
+const result9 = matcher9.match(segments9);
+console.log(result9);
+// 输出: ['123', []]
+```
+
+### 剩余参数匹配
+
+```javascript
+// 示例 10: 通用剩余参数
+const matcher10 = match('test[...rest]');
+const segments10 = [
+  { type: SEGMENT_TYPES.TEXT, data: { text: 'test' } },
+  { type: SEGMENT_TYPES.TEXT, data: { text: 'hello' } },
+  { type: SEGMENT_TYPES.FACE, data: { id: 1 } },
+  { type: SEGMENT_TYPES.IMAGE, data: { file: 'test.jpg' } }
+];
+const result10 = matcher10.match(segments10);
+console.log(result10);
+// 输出: [
+//   [
+//     { type: 'text', data: { text: 'hello' } },
+//     { type: 'face', data: { id: 1 } },
+//     { type: 'image', data: { file: 'test.jpg' } }
+//   ],
+//   []
+// ]
+
+// 示例 11: 类型化剩余参数
+const matcher11 = match('test[...rest:face]');
+const segments11 = [
+  { type: SEGMENT_TYPES.TEXT, data: { text: 'test' } },
+  { type: SEGMENT_TYPES.FACE, data: { id: 1 } },
+  { type: SEGMENT_TYPES.FACE, data: { id: 2 } },
+  { type: SEGMENT_TYPES.TEXT, data: { text: 'hello' } },
+  { type: SEGMENT_TYPES.IMAGE, data: { file: 'test.jpg' } }
+];
+const result11 = matcher11.match(segments11);
+console.log(result11);
+// 输出: [
+//   [
+//     { type: 'face', data: { id: 1 } },
+//     { type: 'face', data: { id: 2 } }
+//   ],
+//   [
+//     { type: 'text', data: { text: 'hello' } },
+//     { type: 'image', data: { file: 'test.jpg' } }
+//   ]
+// ]
+```
+
+### 默认值支持
+
+```javascript
+// 示例 12: 可选参数默认值
+const matcher12 = match('foo[mFace:face={"id":1}]');
+const segments12a = [
+  { type: SEGMENT_TYPES.TEXT, data: { text: 'foo' } }
+];
+const result12a = matcher12.match(segments12a);
+console.log(result12a);
+// 输出: [{ id: 1 }, []]
+
+const segments12b = [
+  { type: SEGMENT_TYPES.TEXT, data: { text: 'foo' } },
+  { type: SEGMENT_TYPES.FACE, data: { id: 2 } }
+];
+const result12b = matcher12.match(segments12b);
+console.log(result12b);
+// 输出: [{ type: 'face', data: { id: 2 } }, []]
+
+// 示例 13: 文本默认值
+const matcher13 = match('foo[msg:text=hello]');
+const segments13 = [
+  { type: SEGMENT_TYPES.TEXT, data: { text: 'foo' } }
+];
+const result13 = matcher13.match(segments13);
+console.log(result13);
+// 输出: ['hello', []]
+```
+
+### 链式回调处理
+
+```javascript
+// 示例 14: 链式处理
+const matcher14 = match('test<arg1:text>')
+  .action((result) => {
+    const [arg1] = result;
+    return arg1;
+  })
+  .action((arg1) => {
+    return arg1.toUpperCase();
+  });
+
+const segments14 = [
+  { type: SEGMENT_TYPES.TEXT, data: { text: 'test123' } }
+];
+const result14 = matcher14.match(segments14);
+console.log(result14);
+// 输出: '123'
+```
+
+### 匹配失败情况
+
+```javascript
+// 示例 15: 模式不匹配
+const matcher15 = match('hello <name:text>');
+const segments15 = [
+  { type: SEGMENT_TYPES.FACE, data: { id: 1 } }
+];
+const result15 = matcher15.match(segments15);
+console.log(result15);
+// 输出: null
+
+// 示例 16: 必需参数缺失
+const matcher16 = match('hello <name:text>');
+const segments16 = [
+  { type: SEGMENT_TYPES.TEXT, data: { text: 'hello' } }
+];
+const result16 = matcher16.match(segments16);
+console.log(result16);
+// 输出: null
+
+// 示例 17: 类型不匹配（string类型已移除）
+const matcher17 = match('hello <name:string>');
+const segments17 = [
+  { type: SEGMENT_TYPES.TEXT, data: { text: 'hello world' } }
+];
+const result17 = matcher17.match(segments17);
+console.log(result17);
+// 输出: null
 ```
 
 ### 链式回调处理
