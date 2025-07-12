@@ -1,4 +1,4 @@
-import { SEGMENT_TYPES, MessageSegment, MatchResponse } from './types';
+import { MessageSegment, MatchResponse } from './types';
 import { PatternToken } from './pattern_token';
 import { MatchResult } from './match_result';
 
@@ -83,17 +83,17 @@ export class SegmentMatcher {
   }
 
   private static matchLiteral(token: PatternToken, segment: MessageSegment, segments: MessageSegment[], segmentIndex: number): MatchResponse {
-    if (segment.type === SEGMENT_TYPES.TEXT && segment.data.text.startsWith(token.value!)) {
+    if (segment.type === 'text' && segment.data.text.startsWith(token.value!)) {
       const matchedText = token.value!;
       let afterText = segment.data.text.substring(matchedText.length);
       const matched: MessageSegment[] = [];
       
-      matched.push({ type: SEGMENT_TYPES.TEXT, data: { text: matchedText } });
+      matched.push({ type: 'text', data: { text: matchedText } });
       
       // 将剩余文本插入到下一个位置
       if (afterText) {
         segments.splice(segmentIndex + 1, 0, {
-          type: SEGMENT_TYPES.TEXT,
+          type: 'text',
           data: { text: afterText }
         });
       }
@@ -124,16 +124,16 @@ export class SegmentMatcher {
                 };
               }
               // text 类型特殊处理，允许包含
-              if (segment.type === SEGMENT_TYPES.TEXT && typeof segment.data[singleField] === 'string' && segment.data[singleField].includes(token.value)) {
+              if (segment.type === 'text' && typeof segment.data[singleField] === 'string' && segment.data[singleField].includes(token.value)) {
                 const { beforeText, matchedText, afterText } = SegmentMatcher.splitText(segment.data[singleField], token.value);
                 const matched: MessageSegment[] = [];
                 if (beforeText) {
-                  matched.push({ type: SEGMENT_TYPES.TEXT, data: { text: beforeText } });
+                  matched.push({ type: 'text', data: { text: beforeText } });
       }
-                matched.push({ type: SEGMENT_TYPES.TEXT, data: { text: matchedText } });
+                matched.push({ type: 'text', data: { text: matchedText } });
                 if (afterText) {
                   segments.splice(segmentIndex + 1, 0, {
-                    type: SEGMENT_TYPES.TEXT,
+                    type: 'text',
                     data: { text: afterText }
                   });
                 }
@@ -155,16 +155,16 @@ export class SegmentMatcher {
             };
           }
           // text 类型特殊处理，允许包含
-          if (segment.type === SEGMENT_TYPES.TEXT && typeof segment.data[field] === 'string' && segment.data[field].includes(token.value)) {
+          if (segment.type === 'text' && typeof segment.data[field] === 'string' && segment.data[field].includes(token.value)) {
             const { beforeText, matchedText, afterText } = SegmentMatcher.splitText(segment.data[field], token.value);
             const matched: MessageSegment[] = [];
             if (beforeText) {
-              matched.push({ type: SEGMENT_TYPES.TEXT, data: { text: beforeText } });
+              matched.push({ type: 'text', data: { text: beforeText } });
             }
-            matched.push({ type: SEGMENT_TYPES.TEXT, data: { text: matchedText } });
+            matched.push({ type: 'text', data: { text: matchedText } });  
             if (afterText) {
               segments.splice(segmentIndex + 1, 0, {
-                type: SEGMENT_TYPES.TEXT,
+                type: 'text',
                 data: { text: afterText }
               });
             }
@@ -183,7 +183,7 @@ export class SegmentMatcher {
   private static matchParameter(token: PatternToken, segment: MessageSegment): MatchResponse {
     if (!segment) return { success: false };
     if (token.dataType === 'text') {
-      if (segment.type === SEGMENT_TYPES.TEXT) {
+      if (segment.type === 'text') {
         return {
           success: true,
           matched: [segment],
@@ -213,7 +213,7 @@ export class SegmentMatcher {
         restSegments.push(segment);
         currentSegmentIndex++;
       } else if (token.dataType === 'text') {
-        if (segment.type === SEGMENT_TYPES.TEXT) {
+        if (segment.type === 'text') {
           restSegments.push(segment);
           currentSegmentIndex++;
         } else {

@@ -1,4 +1,4 @@
-import { PatternToken as IPatternToken, TokenType, SegmentType } from './types';
+import { PatternToken as IPatternToken, TokenType } from './types';
 
 /**
  * 模式令牌类
@@ -6,7 +6,7 @@ import { PatternToken as IPatternToken, TokenType, SegmentType } from './types';
 export class PatternToken implements IPatternToken {
   type: TokenType;
   value?: string;
-  segmentType?: SegmentType;
+  segmentType?: string;
   name?: string;
   dataType?: string | null;
   optional?: boolean;
@@ -21,7 +21,7 @@ export class PatternToken implements IPatternToken {
     return new PatternToken('literal', { value });
   }
 
-  static createTypedLiteral(segmentType: SegmentType, value: string): PatternToken {
+  static createTypedLiteral(segmentType: string, value: string): PatternToken {
     return new PatternToken('typed_literal', { segmentType, value });
   }
 

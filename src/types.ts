@@ -1,24 +1,7 @@
-// 消息段类型定义
-export const SEGMENT_TYPES = {
-  TEXT: 'text',
-  FACE: 'face',
-  IMAGE: 'image',
-  VOICE: 'voice',
-  VIDEO: 'video',
-  FILE: 'file',
-  AT: 'at',
-  REPLY: 'reply',
-  FORWARD: 'forward',
-  JSON: 'json',
-  XML: 'xml',
-  CARD: 'card'
-} as const;
-
-export type SegmentType = typeof SEGMENT_TYPES[keyof typeof SEGMENT_TYPES];
 
 // 消息段接口
 export interface MessageSegment {
-  type: SegmentType;
+  type: string;
   data: Record<string, any>;
 }
 
@@ -29,7 +12,7 @@ export type TokenType = 'literal' | 'typed_literal' | 'parameter' | 'rest_parame
 export interface PatternToken {
   type: TokenType;
   value?: string;
-  segmentType?: SegmentType;
+  segmentType?: string;
   name?: string;
   dataType?: string | null;
   optional?: boolean;

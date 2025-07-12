@@ -27,12 +27,12 @@ npm install onebot-commander
 ### 基础用法
 
 ```javascript
-import { match, SEGMENT_TYPES } from 'onebot-commander';
+import { match } from 'onebot-commander';
 
 // 简单文本匹配
 const matcher = match('hello <name:text>');
 const segments = [
-  { type: SEGMENT_TYPES.TEXT, data: { text: 'hello world' } }
+  { type: 'text', data: { text: 'hello world' } }
 ];
 
 const [params] = matcher.match(segments);
@@ -95,12 +95,12 @@ asyncCommand
 ### 基础文本匹配
 
 ```javascript
-import { match, SEGMENT_TYPES } from 'onebot-commander';
+import { match } from 'onebot-commander';
 
 // 示例 1: 简单文本匹配
 const matcher1 = match('hello');
 const segments1 = [
-  { type: SEGMENT_TYPES.TEXT, data: { text: 'hello world' } }
+  { type: 'text', data: { text: 'hello world' } }
 ];
 const result1 = matcher1.match(segments1);
 console.log(result1);
@@ -109,7 +109,7 @@ console.log(result1);
 // 示例 2: 必需参数提取
 const matcher2 = match('hello <name:text>');
 const segments2 = [
-  { type: SEGMENT_TYPES.TEXT, data: { text: 'hello Alice' } }
+  { type: 'text', data: { text: 'hello Alice' } }
 ];
 const result2 = matcher2.match(segments2);
 console.log(result2);
@@ -118,7 +118,7 @@ console.log(result2);
 // 示例 3: 可选参数（提供时）
 const matcher3 = match('ping [message:text]');
 const segments3 = [
-  { type: SEGMENT_TYPES.TEXT, data: { text: 'ping hello' } }
+  { type: 'text', data: { text: 'ping hello' } }
 ];
 const result3 = matcher3.match(segments3);
 console.log(result3);
@@ -126,7 +126,7 @@ console.log(result3);
 
 // 示例 4: 可选参数（未提供时）
 const segments4 = [
-  { type: SEGMENT_TYPES.TEXT, data: { text: 'ping' } }
+  { type: 'text', data: { text: 'ping' } }
 ];
 const result4 = matcher3.match(segments4);
 console.log(result4);
@@ -139,8 +139,8 @@ console.log(result4);
 // 示例 5: 多参数混合模式
 const matcher5 = match('test<arg1:text>[arg2:face]');
 const segments5 = [
-  { type: SEGMENT_TYPES.TEXT, data: { text: 'test123' } },
-  { type: SEGMENT_TYPES.FACE, data: { id: 1 } }
+  { type: 'text', data: { text: 'test123' } },
+  { type: 'face', data: { id: 1 } }
 ];
 const result5 = matcher5.match(segments5);
 console.log(result5);
@@ -149,7 +149,7 @@ console.log(result5);
 // 示例 6: 类型化字面量匹配
 const matcher6 = match('{text:test}<arg1:text>');
 const segments6 = [
-  { type: SEGMENT_TYPES.TEXT, data: { text: 'test123' } }
+  { type: 'text', data: { text: 'test123' } }
 ];
 const result6 = matcher6.match(segments6);
 console.log(result6);
@@ -158,8 +158,8 @@ console.log(result6);
 // 示例 7: 表情类型化字面量（匹配失败）
 const matcher7 = match('{face:2}<arg1:text>');
 const segments7 = [
-  { type: SEGMENT_TYPES.FACE, data: { id: 1 } },
-  { type: SEGMENT_TYPES.TEXT, data: { text: '123' } }
+  { type: 'face', data: { id: 1 } },
+  { type: 'text', data: { text: '123' } }
 ];
 const result7 = matcher7.match(segments7);
 console.log(result7);
@@ -168,8 +168,8 @@ console.log(result7);
 // 示例 8: 图片类型化字面量（匹配成功）
 const matcher8 = match('{image:test.jpg}<arg1:text>');
 const segments8 = [
-  { type: SEGMENT_TYPES.IMAGE, data: { file: 'test.jpg' } },
-  { type: SEGMENT_TYPES.TEXT, data: { text: '123' } }
+  { type: 'image', data: { file: 'test.jpg' } },
+  { type: 'text', data: { text: '123' } }
 ];
 const result8 = matcher8.match(segments8);
 console.log(result8);
@@ -178,8 +178,8 @@ console.log(result8);
 // 示例 9: @类型化字面量
 const matcher9 = match('{at:123456}<arg1:text>');
 const segments9 = [
-  { type: SEGMENT_TYPES.AT, data: { user_id: 123456 } },
-  { type: SEGMENT_TYPES.TEXT, data: { text: '123' } }
+  { type: 'at', data: { user_id: 123456 } },
+  { type: 'text', data: { text: '123' } }
 ];
 const result9 = matcher9.match(segments9);
 console.log(result9);
@@ -192,10 +192,10 @@ console.log(result9);
 // 示例 10: 通用剩余参数
 const matcher10 = match('test[...rest]');
 const segments10 = [
-  { type: SEGMENT_TYPES.TEXT, data: { text: 'test' } },
-  { type: SEGMENT_TYPES.TEXT, data: { text: 'hello' } },
-  { type: SEGMENT_TYPES.FACE, data: { id: 1 } },
-  { type: SEGMENT_TYPES.IMAGE, data: { file: 'test.jpg' } }
+  { type: 'text', data: { text: 'test' } },
+  { type: 'text', data: { text: 'hello' } },
+  { type: 'face', data: { id: 1 } },
+  { type: 'image', data: { file: 'test.jpg' } }
 ];
 const result10 = matcher10.match(segments10);
 console.log(result10);
@@ -212,11 +212,11 @@ console.log(result10);
 // 示例 11: 类型化剩余参数
 const matcher11 = match('test[...rest:face]');
 const segments11 = [
-  { type: SEGMENT_TYPES.TEXT, data: { text: 'test' } },
-  { type: SEGMENT_TYPES.FACE, data: { id: 1 } },
-  { type: SEGMENT_TYPES.FACE, data: { id: 2 } },
-  { type: SEGMENT_TYPES.TEXT, data: { text: 'hello' } },
-  { type: SEGMENT_TYPES.IMAGE, data: { file: 'test.jpg' } }
+  { type: 'text', data: { text: 'test' } },
+  { type: 'face', data: { id: 1 } },
+  { type: 'face', data: { id: 2 } },
+  { type: 'text', data: { text: 'hello' } },
+  { type: 'image', data: { file: 'test.jpg' } }
 ];
 const result11 = matcher11.match(segments11);
 console.log(result11);
@@ -238,15 +238,15 @@ console.log(result11);
 // 示例 12: 可选参数默认值
 const matcher12 = match('foo[mFace:face={"id":1}]');
 const segments12a = [
-  { type: SEGMENT_TYPES.TEXT, data: { text: 'foo' } }
+  { type: 'text', data: { text: 'foo' } }
 ];
 const result12a = matcher12.match(segments12a);
 console.log(result12a);
 // 输出: [{ mFace: { id: 1 } }]
 
 const segments12b = [
-  { type: SEGMENT_TYPES.TEXT, data: { text: 'foo' } },
-  { type: SEGMENT_TYPES.FACE, data: { id: 2 } }
+  { type: 'text', data: { text: 'foo' } },
+  { type: 'face', data: { id: 2 } }
 ];
 const result12b = matcher12.match(segments12b);
 console.log(result12b);
@@ -255,7 +255,7 @@ console.log(result12b);
 // 示例 13: 文本默认值
 const matcher13 = match('foo[msg:text=hello]');
 const segments13 = [
-  { type: SEGMENT_TYPES.TEXT, data: { text: 'foo' } }
+  { type: 'text', data: { text: 'foo' } }
 ];
 const result13 = matcher13.match(segments13);
 console.log(result13);
@@ -281,7 +281,7 @@ const matcher14 = match('test<arg1:text>')
   });
 
 const segments14 = [
-  { type: SEGMENT_TYPES.TEXT, data: { text: 'test123' } }
+  { type: 'text', data: { text: 'test123' } }
 ];
 const [result14] = matcher14.match(segments14);
 console.log(result14);
@@ -301,7 +301,7 @@ const matcher15 = match('test<arg1:text>')
   });
 
 const segments15 = [
-  { type: SEGMENT_TYPES.TEXT, data: { text: 'test123' } }
+  { type: 'text', data: { text: 'test123' } }
 ];
 const [result15] = await matcher15.matchAsync(segments15);
 console.log(result15);
@@ -322,7 +322,7 @@ const matcher16 = match('test<arg1:text>')
   });
 
 const segments16 = [
-  { type: SEGMENT_TYPES.TEXT, data: { text: 'test123' } }
+  { type: 'text', data: { text: 'test123' } }
 ];
 const [length] = await matcher16.matchAsync(segments16);
 console.log(length);
@@ -335,7 +335,7 @@ console.log(length);
 // 示例 17: 模式不匹配
 const matcher17 = match('hello <name:text>');
 const segments17 = [
-  { type: SEGMENT_TYPES.FACE, data: { id: 1 } }
+  { type: 'face', data: { id: 1 } }
 ];
 const result17 = matcher17.match(segments17);
 console.log(result17);
@@ -344,7 +344,7 @@ console.log(result17);
 // 示例 18: 必需参数缺失
 const matcher18 = match('hello <name:text>');
 const segments18 = [
-  { type: SEGMENT_TYPES.TEXT, data: { text: 'hello' } }
+  { type: 'text', data: { text: 'hello' } }
 ];
 const result18 = matcher18.match(segments18);
 console.log(result18);
@@ -353,7 +353,7 @@ console.log(result18);
 // 示例 19: 类型不匹配（string类型已移除）
 const matcher19 = match('hello <name:string>');
 const segments19 = [
-  { type: SEGMENT_TYPES.TEXT, data: { text: 'hello world' } }
+  { type: 'text', data: { text: 'hello world' } }
 ];
 const result19 = matcher19.match(segments19);
 console.log(result19);

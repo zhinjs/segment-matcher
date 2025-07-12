@@ -1,24 +1,24 @@
-import { Commander, match, SEGMENT_TYPES, MessageSegment } from '../index';
+import { Commander, match, MessageSegment } from '../index';
 
 describe('Commander', () => {
   describe('Basic functionality', () => {
     test('should match basic text pattern', () => {
       const matcher = match('hello');
       const segments: MessageSegment[] = [
-        { type: SEGMENT_TYPES.TEXT, data: { text: 'hello world' } }
+        { type: 'text', data: { text: 'hello world' } }
       ];
       
       const result = matcher.match(segments);
       expect(result).toEqual([
         {},
-        { type: SEGMENT_TYPES.TEXT, data: { text: ' world' } }
+        { type: 'text', data: { text: ' world' } }
       ]);
     });
 
     test('should match with required parameter', () => {
       const matcher = match('hello <name:text>');
       const segments: MessageSegment[] = [
-        { type: SEGMENT_TYPES.TEXT, data: { text: 'hello Alice' } }
+        { type: 'text', data: { text: 'hello Alice' } }
       ];
       
       const result = matcher.match(segments);
@@ -29,7 +29,7 @@ describe('Commander', () => {
     test('should match with optional parameter', () => {
       const matcher = match('ping [message:text]');
       const segments: MessageSegment[] = [
-        { type: SEGMENT_TYPES.TEXT, data: { text: 'ping hello' } }
+        { type: 'text', data: { text: 'ping hello' } }
       ];
       
       const result = matcher.match(segments);
@@ -40,7 +40,7 @@ describe('Commander', () => {
     test('should handle optional parameter when not provided', () => {
       const matcher = match('ping [message:text]');
       const segments: MessageSegment[] = [
-        { type: SEGMENT_TYPES.TEXT, data: { text: 'ping' } }
+        { type: 'text', data: { text: 'ping' } }
       ];
       
       const result = matcher.match(segments);
@@ -52,15 +52,15 @@ describe('Commander', () => {
     test('should match complex pattern with multiple parameters', () => {
       const matcher = match('test<arg1:text>[arg2:face]');
       const segments: MessageSegment[] = [
-        { type: SEGMENT_TYPES.TEXT, data: { text: 'test123' } },
-        { type: SEGMENT_TYPES.FACE, data: { id: 1 } }
+        { type: 'text', data: { text: 'test123' } },
+        { type: 'face', data: { id: 1 } }
       ];
       
       const result = matcher.match(segments);
       expect(result).toEqual([
         { 
           arg1: '123', 
-          arg2: { type: SEGMENT_TYPES.FACE, data: { id: 1 } } 
+          arg2: { type: 'face', data: { id: 1 } } 
         }
       ]);
     });
@@ -68,7 +68,7 @@ describe('Commander', () => {
     test('should match typed literal pattern', () => {
       const matcher = match('{text:test}<arg1:text>');
       const segments: MessageSegment[] = [
-        { type: SEGMENT_TYPES.TEXT, data: { text: 'test123' } }
+        { type: 'text', data: { text: 'test123' } }
       ];
       
       const result = matcher.match(segments);
@@ -77,8 +77,8 @@ describe('Commander', () => {
     test('should match typed literal pattern for face', () => {
       const matcher = match('{face:2}<arg1:text>');
       const segments: MessageSegment[] = [
-        { type: SEGMENT_TYPES.FACE, data: { id: 1} },
-        { type: SEGMENT_TYPES.TEXT, data: { text: '123' } }
+        { type: 'face', data: { id: 1} },
+        { type: 'text', data: { text: '123' } }
       ];
 
       const result = matcher.match(segments);
@@ -88,8 +88,8 @@ describe('Commander', () => {
     test('should match typed literal pattern for image', () => {
       const matcher = match('{image:test.jpg}<arg1:text>');
       const segments: MessageSegment[] = [
-        { type: SEGMENT_TYPES.IMAGE, data: { file: 'test.jpg' } },
-        { type: SEGMENT_TYPES.TEXT, data: { text: '123' } }
+        { type: 'image', data: { file: 'test.jpg' } },
+        { type: 'text', data: { text: '123' } }
       ];
 
       const result = matcher.match(segments);
@@ -99,8 +99,8 @@ describe('Commander', () => {
     test('should not match typed literal pattern for image with wrong url', () => {
       const matcher = match('{image:test.jpg}<arg1:text>');
       const segments: MessageSegment[] = [
-        { type: SEGMENT_TYPES.IMAGE, data: { file: 'wrong.jpg' } },
-        { type: SEGMENT_TYPES.TEXT, data: { text: '123' } }
+        { type: 'image', data: { file: 'wrong.jpg' } },
+        { type: 'text', data: { text: '123' } }
       ];
 
       const result = matcher.match(segments);
@@ -110,8 +110,8 @@ describe('Commander', () => {
     test('should match typed literal pattern for at', () => {
       const matcher = match('{at:123456}<arg1:text>');
       const segments: MessageSegment[] = [
-        { type: SEGMENT_TYPES.AT, data: { user_id: 123456 } },
-        { type: SEGMENT_TYPES.TEXT, data: { text: '123' } }
+        { type: 'at', data: { user_id: 123456 } },
+        { type: 'text', data: { text: '123' } }
       ];
 
       const result = matcher.match(segments);
@@ -121,8 +121,8 @@ describe('Commander', () => {
     test('should not match typed literal pattern for at with wrong id', () => {
       const matcher = match('{at:123456}<arg1:text>');
       const segments: MessageSegment[] = [
-        { type: SEGMENT_TYPES.AT, data: { user_id: 654321 } },
-        { type: SEGMENT_TYPES.TEXT, data: { text: '123' } }
+        { type: 'at', data: { user_id: 654321 } },
+        { type: 'text', data: { text: '123' } }
       ];
 
       const result = matcher.match(segments);
@@ -132,8 +132,8 @@ describe('Commander', () => {
     test('should match typed literal pattern for image with file field', () => {
       const matcher = match('{image:test.jpg}<arg1:text>');
       const segments: MessageSegment[] = [
-        { type: SEGMENT_TYPES.IMAGE, data: { file: 'test.jpg' } },
-        { type: SEGMENT_TYPES.TEXT, data: { text: '123' } }
+        { type: 'image', data: { file: 'test.jpg' } },
+        { type: 'text', data: { text: '123' } }
       ];
 
       const result = matcher.match(segments);
@@ -143,8 +143,8 @@ describe('Commander', () => {
     test('should match typed literal pattern for image with url field', () => {
       const matcher = match('{image:https://example.com/image.jpg}<arg1:text>');
       const segments: MessageSegment[] = [
-        { type: SEGMENT_TYPES.IMAGE, data: { url: 'https://example.com/image.jpg' } },
-        { type: SEGMENT_TYPES.TEXT, data: { text: '123' } }
+        { type: 'image', data: { url: 'https://example.com/image.jpg' } },
+        { type: 'text', data: { text: '123' } }
       ];
 
       const result = matcher.match(segments);
@@ -156,18 +156,18 @@ describe('Commander', () => {
     test('should match [...rest] pattern', () => {
       const matcher = match('test[...rest]');
       const segments: MessageSegment[] = [
-        { type: SEGMENT_TYPES.TEXT, data: { text: 'test' } },
-        { type: SEGMENT_TYPES.TEXT, data: { text: 'hello' } },
-        { type: SEGMENT_TYPES.FACE, data: { id: 1 } },
-        { type: SEGMENT_TYPES.IMAGE, data: { file: 'test.jpg' } }
+        { type: 'text', data: { text: 'test' } },
+        { type: 'text', data: { text: 'hello' } },
+        { type: 'face', data: { id: 1 } },
+        { type: 'image', data: { file: 'test.jpg' } }
       ];
       
       const result = matcher.match(segments);
       expect(result).toEqual([
         { rest: [
-          { type: SEGMENT_TYPES.TEXT, data: { text: 'hello' } },
-          { type: SEGMENT_TYPES.FACE, data: { id: 1 } },
-          { type: SEGMENT_TYPES.IMAGE, data: { file: 'test.jpg' } }
+          { type: 'text', data: { text: 'hello' } },
+          { type: 'face', data: { id: 1 } },
+          { type: 'image', data: { file: 'test.jpg' } }
         ]}
       ]);
     });
@@ -175,46 +175,46 @@ describe('Commander', () => {
     test('should match [...rest:face] pattern', () => {
       const matcher = match('test[...rest:face]');
       const segments: MessageSegment[] = [
-        { type: SEGMENT_TYPES.TEXT, data: { text: 'test' } },
-        { type: SEGMENT_TYPES.FACE, data: { id: 1 } },
-        { type: SEGMENT_TYPES.FACE, data: { id: 2 } },
-        { type: SEGMENT_TYPES.TEXT, data: { text: 'hello' } },
-        { type: SEGMENT_TYPES.IMAGE, data: { file: 'test.jpg' } }
+        { type: 'text', data: { text: 'test' } },
+        { type: 'face', data: { id: 1 } },
+        { type: 'face', data: { id: 2 } },
+        { type: 'text', data: { text: 'hello' } },
+        { type: 'image', data: { file: 'test.jpg' } }
       ];
       
       const result = matcher.match(segments);
       expect(result).toEqual([
         { 
           rest: [
-            { type: SEGMENT_TYPES.FACE, data: { id: 1 } },
-            { type: SEGMENT_TYPES.FACE, data: { id: 2 } }
+            { type: 'face', data: { id: 1 } },
+            { type: 'face', data: { id: 2 } },
+            { type: 'text', data: { text: 'hello' } },
+            { type: 'image', data: { file: 'test.jpg' } }
           ]
-        },
-        { type: SEGMENT_TYPES.TEXT, data: { text: 'hello' } },
-        { type: SEGMENT_TYPES.IMAGE, data: { file: 'test.jpg' } }
+        }
       ]);
     });
 
     test('should match [...rest:text] pattern', () => {
       const matcher = match('test[...rest:text]');
       const segments: MessageSegment[] = [
-        { type: SEGMENT_TYPES.TEXT, data: { text: 'test' } },
-        { type: SEGMENT_TYPES.TEXT, data: { text: 'hello' } },
-        { type: SEGMENT_TYPES.TEXT, data: { text: 'world' } },
-        { type: SEGMENT_TYPES.FACE, data: { id: 1 } },
-        { type: SEGMENT_TYPES.IMAGE, data: { file: 'test.jpg' } }
+        { type: 'text', data: { text: 'test' } },
+        { type: 'text', data: { text: 'hello' } },
+        { type: 'text', data: { text: 'world' } },
+        { type: 'face', data: { id: 1 } },
+        { type: 'image', data: { file: 'test.jpg' } }
       ];
       
       const result = matcher.match(segments);
       expect(result).toEqual([
         { 
           rest: [
-            { type: SEGMENT_TYPES.TEXT, data: { text: 'hello' } },
-            { type: SEGMENT_TYPES.TEXT, data: { text: 'world' } }
+            { type: 'text', data: { text: 'hello' } },
+            { type: 'text', data: { text: 'world' } }
           ]
         },
-        { type: SEGMENT_TYPES.FACE, data: { id: 1 } },
-        { type: SEGMENT_TYPES.IMAGE, data: { file: 'test.jpg' } }
+        { type: 'face', data: { id: 1 } },
+        { type: 'image', data: { file: 'test.jpg' } }
       ]);
     });
   });
@@ -222,7 +222,7 @@ describe('Commander', () => {
   describe('Action chaining', () => {
     test('should support action chaining', () => {
       const matcher = match('test<arg1:text>')
-        .action((result: { arg1: string }) => {
+        .action((result) => {
           return result.arg1;
         })
         .action((arg1: string) => {
@@ -230,7 +230,7 @@ describe('Commander', () => {
         });
 
       const segments: MessageSegment[] = [
-        { type: SEGMENT_TYPES.TEXT, data: { text: 'test123' } }
+        { type: 'text', data: { text: 'test123' } }
       ];
       
       const [str] = matcher.match(segments);
@@ -239,7 +239,7 @@ describe('Commander', () => {
 
     test('should support async action chaining', async () => {
       const matcher = match('test<arg1:text>')
-        .action(async (result: { arg1: string }) => {
+        .action(async (result) => {
           // 模拟异步操作
           await new Promise(resolve => setTimeout(resolve, 10));
           return result.arg1;
@@ -251,7 +251,7 @@ describe('Commander', () => {
         });
 
       const segments: MessageSegment[] = [
-        { type: SEGMENT_TYPES.TEXT, data: { text: 'test123' } }
+        { type: 'text', data: { text: 'test123' } }
       ];
       
       const [str] = await matcher.matchAsync(segments);
@@ -272,7 +272,7 @@ describe('Commander', () => {
         });
 
       const segments: MessageSegment[] = [
-        { type: SEGMENT_TYPES.TEXT, data: { text: 'test123' } }
+        { type: 'text', data: { text: 'test123' } }
       ];
       
       const [length] = await matcher.matchAsync(segments);
@@ -286,7 +286,7 @@ describe('Commander', () => {
         });
 
       const segments: MessageSegment[] = [
-        { type: SEGMENT_TYPES.TEXT, data: { text: 'test123' } }
+        { type: 'text', data: { text: 'test123' } }
       ];
       
       await expect(matcher.matchAsync(segments)).rejects.toThrow('Async error');
@@ -297,7 +297,7 @@ describe('Commander', () => {
     test('should return null when pattern does not match', () => {
       const matcher = match('hello <name:text>');
       const segments: MessageSegment[] = [
-        { type: SEGMENT_TYPES.FACE, data: { id: 1 } }
+        { type: 'face', data: { id: 1 } }
       ];
       
       const result = matcher.match(segments);
@@ -307,7 +307,7 @@ describe('Commander', () => {
     test('should return null when required parameter is missing', () => {
       const matcher = match('hello <name:text>');
       const segments: MessageSegment[] = [
-        { type: SEGMENT_TYPES.TEXT, data: { text: 'hello' } }
+        { type: 'text', data: { text: 'hello' } }
       ];
       
       const result = matcher.match(segments);
@@ -336,7 +336,7 @@ describe('Commander', () => {
     test('should use default value for optional face param if not present', () => {
       const matcher = match('foo[mFace:face={"id":1}]');
       const segments: MessageSegment[] = [
-        { type: SEGMENT_TYPES.TEXT, data: { text: 'foo' } }
+        { type: 'text', data: { text: 'foo' } }
       ];
       const result = matcher.match(segments);
       expect(result).toEqual([{ mFace: { id: 1 } }]);
@@ -345,19 +345,19 @@ describe('Commander', () => {
     test('should use matched value for optional face param if present', () => {
       const matcher = match('foo[mFace:face={"id":1}]');
       const segments: MessageSegment[] = [
-        { type: SEGMENT_TYPES.TEXT, data: { text: 'foo' } },
-        { type: SEGMENT_TYPES.FACE, data: { id: 2 } }
+        { type: 'text', data: { text: 'foo' } },
+        { type: 'face', data: { id: 2 } }
       ];
       const result = matcher.match(segments);
       expect(result).toEqual([
-        { mFace: { type: SEGMENT_TYPES.FACE, data: { id: 2 } } }
+        { mFace: { type: 'face', data: { id: 2 } } }
       ]);
     });
 
     test('should use default string value for optional text param', () => {
       const matcher = match('foo[msg:text=hello]');
       const segments: MessageSegment[] = [
-        { type: SEGMENT_TYPES.TEXT, data: { text: 'foo' } }
+        { type: 'text', data: { text: 'foo' } }
       ];
       const result = matcher.match(segments);
       expect(result).toEqual([{ msg: 'hello' }]);
@@ -368,7 +368,7 @@ describe('Commander', () => {
     test('should not support string type anymore', () => {
       const matcher = match('hello <name:string>');
       const segments: MessageSegment[] = [
-        { type: SEGMENT_TYPES.TEXT, data: { text: 'hello world' } }
+        { type: 'text', data: { text: 'hello world' } }
       ];
       
       const result = matcher.match(segments);
@@ -379,7 +379,7 @@ describe('Commander', () => {
     test('should only support text type for text segments', () => {
       const matcher = match('hello <name:text>');
       const segments: MessageSegment[] = [
-        { type: SEGMENT_TYPES.TEXT, data: { text: 'hello world' } }
+        { type: 'text', data: { text: 'hello world' } }
       ];
       
       const result = matcher.match(segments);
