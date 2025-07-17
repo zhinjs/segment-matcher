@@ -37,16 +37,6 @@ jobs:
       env:
         NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
-    - name: Create Release
-      uses: actions/create-release@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        tag_name: ${{ github.ref }}
-        release_name: Release ${{ github.ref }}
-        draft: false
-        prerelease: false
-
     - name: Generate changelog
       id: changelog
       run: |
@@ -74,20 +64,22 @@ jobs:
         cat CHANGELOG_RELEASE.md >> $GITHUB_OUTPUT
         echo "EOF" >> $GITHUB_OUTPUT
 
-    - name: Update Release
-      uses: actions/update-release@v1
+    - name: Create Release
+      run: |
+        gh release create ${{ github.ref_name }} \
+          --title "Release ${{ github.ref_name }}" \
+          --notes-file CHANGELOG_RELEASE.md \
+          --draft=false \
+          --prerelease=false
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        release_id: ${{ steps.create_release.outputs.id }}
-        body: ${{ steps.changelog.outputs.changelog }}
 
     - name: Upload build artifacts
-      uses: actions/upload-release-asset@v1
+      run: |
+        # 创建压缩包
+        tar -czf onebot-commander-${{ github.ref_name }}.tar.gz -C dist .
+        
+        # 上传到 release
+        gh release upload ${{ github.ref_name }} onebot-commander-${{ github.ref_name }}.tar.gz
       env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: ./dist/
-        asset_name: onebot-commander-${{ github.ref_name }}.tar.gz
-        asset_content_type: application/gzip 
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} 
