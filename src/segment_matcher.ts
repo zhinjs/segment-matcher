@@ -30,14 +30,8 @@ function optimizedDeepClone<T>(obj: T): T {
   }
   
   // 复杂对象使用结构化克隆
-  if (typeof structuredClone === 'function') {
-    try {
-      return structuredClone(obj);
-    } catch {
-      // 结构化克隆失败，降级到 JSON 方法
-    }
-  }
-  
+  if (typeof structuredClone === 'function')
+    return structuredClone(obj);
   // 降级方案：JSON 深拷贝
   return JSON.parse(JSON.stringify(obj));
 }

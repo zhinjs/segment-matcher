@@ -37,12 +37,7 @@ class OptimizedCallbackChain {
     
     let values = initialValues;
     for (const callback of this.callbacks) {
-      try {
-        values = [callback(...values)];
-      } catch (error) {
-        // 错误处理：重新抛出错误
-        throw error;
-      }
+      values = [callback(...values)];
     }
     
     return Array.isArray(values) ? values : [values];
@@ -58,13 +53,8 @@ class OptimizedCallbackChain {
     
     let values = initialValues;
     for (const callback of this.callbacks) {
-      try {
-        const result = callback(...values);
-        values = result instanceof Promise ? [await result] : [result];
-      } catch (error) {
-        // 错误处理：重新抛出错误
-        throw error;
-      }
+      const result = callback(...values);
+      values = result instanceof Promise ? [await result] : [result];
     }
     
     return Array.isArray(values) ? values : [values];
