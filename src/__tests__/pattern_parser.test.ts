@@ -1,5 +1,4 @@
 import { PatternParser } from '../pattern_parser';
-import { PatternToken } from '../pattern_token';
 import { PatternParseError } from '../errors';
 
 describe('PatternParser', () => {

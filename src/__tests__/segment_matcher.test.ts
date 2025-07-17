@@ -372,7 +372,8 @@ describe('Commander', () => {
 
     test('should handle async actions with error', async () => {
       const matcher = match('test<arg1:text>')
-        .action(async (result) => {
+          // eslint-ignore
+        .action(async () => {
           throw new Error('Async error');
         });
 
