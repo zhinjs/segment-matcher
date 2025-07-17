@@ -11,7 +11,7 @@ const parseCache = new Map<string, PatternToken[]>();
 /**
  * 优化的字符串分割函数
  */
-function optimizedSplit(str: string, delimiter: string, limit: number = 2): string[] {
+function optimizedSplit(str: string, delimiter: string): string[] {
   const index = str.indexOf(delimiter);
   if (index === -1) {
     return [str];
