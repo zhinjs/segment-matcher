@@ -10,76 +10,115 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: '18.x'
-        cache: 'npm'
-        registry-url: 'https://registry.npmjs.org'
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18.x'
+          cache: 'npm'
+          registry-url: 'https://registry.npmjs.org'
 
-    - name: Install dependencies
-      run: npm ci
+      - name: Install dependencies
+        run: npm ci
 
-    - name: Run tests
-      run: npm test
+      - name: Run tests
+        run: npm test
 
-    - name: Build project
-      run: npm run build
+      - name: Build project
+        run: npm run build
 
-    - name: Run benchmarks
-      run: npm run benchmark
+      - name: Run benchmarks
+        run: npm run benchmark
 
-    - name: Publish to npm
-      run: npm publish --access public
-      env:
-        NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+      - name: Publish to npm
+        run: npm publish --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
-    - name: Generate changelog
-      id: changelog
-      run: |
-        # 获取版本号
-        VERSION=${GITHUB_REF#refs/tags/}
-        
-        # 生成 changelog
-        echo "## What's Changed" > CHANGELOG_RELEASE.md
-        echo "" >> CHANGELOG_RELEASE.md
-        
-        # 获取上一个标签
-        PREVIOUS_TAG=$(git describe --tags --abbrev=0 HEAD~1 2>/dev/null || echo "")
-        
-        if [ -n "$PREVIOUS_TAG" ]; then
-          echo "### Changes since $PREVIOUS_TAG" >> CHANGELOG_RELEASE.md
-          echo "" >> CHANGELOG_RELEASE.md
-          git log --pretty=format:"- %s" $PREVIOUS_TAG..HEAD >> CHANGELOG_RELEASE.md
-        else
-          echo "### Initial Release" >> CHANGELOG_RELEASE.md
-          echo "" >> CHANGELOG_RELEASE.md
-          git log --pretty=format:"- %s" >> CHANGELOG_RELEASE.md
-        fi
-        
-        echo "changelog<<EOF" >> $GITHUB_OUTPUT
-        cat CHANGELOG_RELEASE.md >> $GITHUB_OUTPUT
-        echo "EOF" >> $GITHUB_OUTPUT
+      - name: Generate changelog
+        id: changelog
+        run: |
+          # 获取版本号
+          VERSION=${GITHUB_REF#refs/tags/}
+          
+          # 检查是否存在 CHANGELOG.md
+          if [ -f "CHANGELOG.md" ]; then
+            echo "CHANGELOG.md 已存在，将新内容追加到文件开头"
+            
+            # 创建临时文件存储新内容
+            echo "# Changelog" > CHANGELOG_NEW.md
+            echo "" >> CHANGELOG_NEW.md
+            echo "## [$VERSION] - $(date +%Y-%m-%d)" >> CHANGELOG_NEW.md
+            echo "" >> CHANGELOG_NEW.md
+            echo "### What's Changed" >> CHANGELOG_NEW.md
+            echo "" >> CHANGELOG_NEW.md
+            
+            # 获取上一个标签
+            PREVIOUS_TAG=$(git describe --tags --abbrev=0 HEAD~1 2>/dev/null || echo "")
+            # 检查是否是首次发布
+            if [ -n "$PREVIOUS_TAG" ]; then
+              echo "### Changes since $PREVIOUS_TAG" >> CHANGELOG_NEW.md
+              echo "" >> CHANGELOG_NEW.md
+              git log --pretty=format:"- %s" $PREVIOUS_TAG..HEAD >> CHANGELOG_NEW.md
+            else
+              # 首次发布，获取所有 commit
+              echo "### Initial Release" >> CHANGELOG_NEW.md
+              echo "" >> CHANGELOG_NEW.md
+              git log --pretty=format:"- %s" --reverse >> CHANGELOG_NEW.md
+            fi
+            
+            echo "" >> CHANGELOG_NEW.md
+            echo "---" >> CHANGELOG_NEW.md
+            echo "" >> CHANGELOG_NEW.md
+            
+            # 将新内容添加到原文件开头
+            cat CHANGELOG_NEW.md CHANGELOG.md > CHANGELOG_TEMP.md
+            mv CHANGELOG_TEMP.md CHANGELOG.md
+            rm CHANGELOG_NEW.md
+          else
+            echo "CHANGELOG.md 不存在，创建新文件"
+            
+            # 创建新的 CHANGELOG.md
+            echo "# Changelog" > CHANGELOG.md
+            echo "" >> CHANGELOG.md
+            echo "## [$VERSION] - $(date +%Y-%m-%d)" >> CHANGELOG.md
+            echo "" >> CHANGELOG.md
+            echo "### What's Changed" >> CHANGELOG.md
+            echo "" >> CHANGELOG.md
+            
+            # 获取上一个标签
+            PREVIOUS_TAG=$(git describe --tags --abbrev=0 HEAD~1 2>/dev/null || echo "")
+            # 检查是否是首次发布
+            if [ -n "$PREVIOUS_TAG" ]; then
+              echo "### Changes since $PREVIOUS_TAG" >> CHANGELOG.md
+              echo "" >> CHANGELOG.md
+              git log --pretty=format:"- %s" $PREVIOUS_TAG..HEAD >> CHANGELOG.md
+            else
+              # 首次发布，获取所有 commit
+              echo "### Initial Release" >> CHANGELOG.md
+              echo "" >> CHANGELOG.md
+              git log --pretty=format:"- %s" --reverse >> CHANGELOG.md
+            fi
+          fi
 
-    - name: Create Release
-      run: |
-        gh release create ${{ github.ref_name }} \
-          --title "Release ${{ github.ref_name }}" \
-          --notes-file CHANGELOG_RELEASE.md \
-          --draft=false \
-          --prerelease=false
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Create Release
+        run: |
+          gh release create ${{ github.ref_name }} \
+            --title "Release ${{ github.ref_name }}" \
+            --notes-file CHANGELOG.md \
+            --draft=false \
+            --prerelease=false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-    - name: Upload build artifacts
-      run: |
-        # 创建压缩包
-        tar -czf onebot-commander-${{ github.ref_name }}.tar.gz -C dist .
-        
-        # 上传到 release
-        gh release upload ${{ github.ref_name }} onebot-commander-${{ github.ref_name }}.tar.gz
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} 
+      - name: Upload build artifacts
+        run: |
+          # 创建压缩包
+          tar -czf onebot-commander-${{ github.ref_name }}.tar.gz -C dist .
+          
+          # 上传到 release
+          gh release upload ${{ github.ref_name }} onebot-commander-${{ github.ref_name }}.tar.gz
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
