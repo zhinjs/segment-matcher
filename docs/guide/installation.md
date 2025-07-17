@@ -176,8 +176,7 @@ Error: Cannot resolve module 'onebot-commander'
 如果遇到其他问题：
 
 1. 查看 [GitHub Issues](https://github.com/your-username/onebot-commander/issues)
-2. 阅读 [故障排除指南](/guide/troubleshooting)
-3. 提交详细的错误报告
+2. 提交详细的错误报告
 
 ## 下一步
 

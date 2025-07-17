@@ -297,8 +297,7 @@ npm publish
 如果您在贡献过程中遇到问题：
 
 1. 查看 [GitHub Issues](https://github.com/your-username/onebot-commander/issues)
-2. 阅读 [开发文档](/contributing/development)
-3. 参与 [GitHub Discussions](https://github.com/your-username/onebot-commander/discussions)
+2. 参与 [GitHub Discussions](https://github.com/your-username/onebot-commander/discussions)
 
 ## 致谢
 

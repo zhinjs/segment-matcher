@@ -12,7 +12,7 @@ SegmentMatcher 是一个消息段匹配器，它接收模式令牌和消息段�
 import { SegmentMatcher, PatternToken } from 'onebot-commander';
 
 const matcher = new SegmentMatcher();
-const tokens = parsePattern('hello <name:text>');
+const tokens = parsePattern('hello &lt;name:text&gt;');
 const segments = [{ type: 'text', data: { text: 'hello Alice' } }];
 
 const result = matcher.match(tokens, segments);
@@ -58,7 +58,7 @@ if (result.success) {
 }
 ```
 
-#### matchAsync(tokens: PatternToken[], segments: MessageSegment[]): Promise<MatchResult>
+#### matchAsync(tokens: PatternToken[], segments: MessageSegment[]): Promise&lt;MatchResult&gt;
 
 异步执行消息段匹配。
 
@@ -76,7 +76,7 @@ const result = await matcher.matchAsync(tokens, segments);
 ```typescript
 interface MatchResult {
   success: boolean;
-  params?: Record<string, any>;
+  params?: Record&lt;string, any&gt;;
   remaining?: MessageSegment[];
   reason?: string;
   consumed?: number;
@@ -102,7 +102,7 @@ const parser = new PatternParser();
 const matcher = new SegmentMatcher();
 
 // 解析模式
-const tokens = parser.parse('hello <name:text>');
+const tokens = parser.parse('hello &lt;name:text&gt;');
 
 // 匹配消息段
 const segments = [
@@ -124,7 +124,7 @@ if (result.success) {
 
 ```typescript
 // 复杂模式匹配
-const tokens = parser.parse('{face:1}<command:text>[count:number=1]');
+const tokens = parser.parse('{face:1}&lt;command:text&gt;[count:number=1]');
 
 const segments = [
   { type: 'face', data: { id: 1 } },
@@ -148,7 +148,7 @@ if (result.success) {
 
 ```typescript
 // 匹配失败的情况
-const tokens = parser.parse('{face:1}<command:text>');
+const tokens = parser.parse('{face:1}&lt;command:text&gt;');
 
 const segments = [
   { type: 'face', data: { id: 2 } }, // ID 不匹配
@@ -176,7 +176,7 @@ const customMapping = {
 
 const matcher = new SegmentMatcher({ fieldMapping: customMapping });
 
-const tokens = parser.parse('{text:hello}<name:text>');
+const tokens = parser.parse('{text:hello}&lt;name:text&gt;');
 
 const segments = [
   { type: 'text', data: { content: 'hello Alice' } }
@@ -191,7 +191,7 @@ const result = matcher.match(tokens, segments);
 ```typescript
 const matcher = new SegmentMatcher({ caseSensitive: false });
 
-const tokens = parser.parse('HELLO <name:text>');
+const tokens = parser.parse('HELLO &lt;name:text&gt;');
 
 const segments = [
   { type: 'text', data: { text: 'hello Alice' } }
@@ -206,7 +206,7 @@ const result = matcher.match(tokens, segments);
 ```typescript
 const matcher = new SegmentMatcher({ strictMode: true });
 
-const tokens = parser.parse('hello <name:text>');
+const tokens = parser.parse('hello &lt;name:text&gt;');
 
 const segments = [
   { type: 'text', data: { text: 'hello Alice' } },
@@ -224,7 +224,7 @@ const result = matcher.match(tokens, segments);
 文本参数默认使用贪婪匹配策略：
 
 ```typescript
-const tokens = parser.parse('echo <message:text>');
+const tokens = parser.parse('echo &lt;message:text&gt;');
 
 const segments = [
   { type: 'text', data: { text: 'echo Hello World' } }
@@ -239,7 +239,7 @@ const result = matcher.match(tokens, segments);
 类型化字面量使用精确匹配：
 
 ```typescript
-const tokens = parser.parse('{text:echo}<message:text>');
+const tokens = parser.parse('{text:echo}&lt;message:text&gt;');
 
 const segments = [
   { type: 'text', data: { text: 'echo Hello' } }
@@ -282,25 +282,25 @@ const result2 = matcher.match(tokens, segments2);
 
 ```typescript
 // 1. 类型不匹配
-const tokens = parser.parse('{face:1}<text:text>');
+const tokens = parser.parse('{face:1}&lt;text:text&gt;');
 const segments = [{ type: 'text', data: { text: 'hello' } }];
 const result = matcher.match(tokens, segments);
 // result.reason = "期望消息段类型为 face，实际为 text"
 
 // 2. 值不匹配
-const tokens2 = parser.parse('{face:1}<text:text>');
+const tokens2 = parser.parse('{face:1}&lt;text:text&gt;');
 const segments2 = [{ type: 'face', data: { id: 2 } }];
 const result2 = matcher.match(tokens2, segments2);
 // result2.reason = "类型化字面量匹配失败: 期望 face.id = 1, 实际 = 2"
 
 // 3. 必需参数缺失
-const tokens3 = parser.parse('hello <name:text>');
+const tokens3 = parser.parse('hello &lt;name:text&gt;');
 const segments3 = [{ type: 'text', data: { text: 'hello' } }];
 const result3 = matcher.match(tokens3, segments3);
 // result3.reason = "必需参数 name 缺失"
 
 // 4. 字段不存在
-const tokens4 = parser.parse('{image:photo.jpg}<caption:text>');
+const tokens4 = parser.parse('{image:photo.jpg}&lt;caption:text&gt;');
 const segments4 = [
   { type: 'image', data: { src: 'photo.jpg' } }, // 使用 src 而不是 file
   { type: 'text', data: { text: 'caption' } }
@@ -350,7 +350,7 @@ function tryPartialMatch(tokens: PatternToken[], segments: MessageSegment[]) {
 ```typescript
 class CachedSegmentMatcher {
   private matcher = new SegmentMatcher();
-  private cache = new Map<string, MatchResult>();
+  private cache = new Map&lt;string, MatchResult&gt;();
   
   match(tokens: PatternToken[], segments: MessageSegment[]): MatchResult {
     const key = this.generateKey(tokens, segments);
@@ -378,7 +378,7 @@ class CachedSegmentMatcher {
 
 ```typescript
 function preFilter(segments: MessageSegment[], requiredTypes: string[]): boolean {
-  return segments.some(segment => requiredTypes.includes(segment.type));
+  return segments.some(segment =&gt; requiredTypes.includes(segment.type));
 }
 
 // 使用预过滤提高性能
@@ -435,8 +435,8 @@ function analyzeMatch(tokens: PatternToken[], segments: MessageSegment[]) {
   const analysis = {
     tokenCount: tokens.length,
     segmentCount: segments.length,
-    tokenTypes: tokens.map(t => t.type),
-    segmentTypes: segments.map(s => s.type),
+    tokenTypes: tokens.map(t =&gt; t.type),
+    segmentTypes: segments.map(s =&gt; s.type),
     complexity: calculateComplexity(tokens, segments)
   };
   
@@ -519,7 +519,7 @@ class StatisticsSegmentMatcher extends SegmentMatcher {
     return {
       ...this.stats,
       successRate: this.stats.successfulMatches / this.stats.totalMatches,
-      averageTime: this.stats.matchTimes.reduce((a, b) => a + b, 0) / this.stats.matchTimes.length
+      averageTime: this.stats.matchTimes.reduce((a, b) =&gt; a + b, 0) / this.stats.matchTimes.length
     };
   }
 }
@@ -559,15 +559,15 @@ function badMatch(matcher: SegmentMatcher, tokens: PatternToken[], segments: Mes
 // ✅ 使用缓存的匹配器
 const cachedMatcher = new CachedSegmentMatcher();
 
-function processMessages(messages: Array<{ tokens: PatternToken[], segments: MessageSegment[] }>) {
-  return messages.map(({ tokens, segments }) => 
+function processMessages(messages: Array&lt;{ tokens: PatternToken[], segments: MessageSegment[] }&gt;) {
+  return messages.map(({ tokens, segments }) =&gt; 
     cachedMatcher.match(tokens, segments)
   );
 }
 
 // ❌ 每次都创建新匹配器
-function badProcessMessages(messages: Array<{ tokens: PatternToken[], segments: MessageSegment[] }>) {
-  return messages.map(({ tokens, segments }) => {
+function badProcessMessages(messages: Array&lt;{ tokens: PatternToken[], segments: MessageSegment[] }&gt;) {
+  return messages.map(({ tokens, segments }) =&gt; {
     const matcher = new SegmentMatcher(); // 每次都创建新实例
     return matcher.match(tokens, segments);
   });
@@ -612,10 +612,3 @@ function badMatch(tokens: PatternToken[], segments: MessageSegment[]) {
 - [类型定义](/api/types) - 了解类型系统
 - [PatternParser](/api/pattern-parser) - 学习模式解析器
 - [Commander](/api/commander) - 查看主要的 API 文档
-
----
-
-<div class="custom-block tip">
-  <p class="custom-block-title">💡 提示</p>
-  <p>SegmentMatcher 是 OneBot Commander 的核心匹配引擎，理解其工作原理有助于优化匹配性能。</p>
-</div> 
