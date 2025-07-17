@@ -1,11 +1,11 @@
 blank_issues_enabled: false
 contact_links:
   - name: 📚 文档
-    url: https://github.com/your-username/onebot-commander#readme
+    url: https://github.com/lc-cn/onebot-commander#readme
     about: 请先查看文档，了解如何使用 onebot-commander
   - name: 💬 讨论
-    url: https://github.com/your-username/onebot-commander/discussions
+    url: https://github.com/lc-cn/onebot-commander/discussions
     about: 在讨论区提问或分享想法
   - name: 🐛 已知问题
-    url: https://github.com/your-username/onebot-commander/issues?q=is%3Aissue+is%3Aopen+label%3Abug
+    url: https://github.com/lc-cn/onebot-commander/issues?q=is%3Aissue+is%3Aopen+label%3Abug
     about: 查看已知的 Bug 列表 

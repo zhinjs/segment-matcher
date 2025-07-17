@@ -10,7 +10,7 @@ OneBot12 消息段命令解析器 - TypeScript 版本，支持 ESM/CJS 双格式
 
 ## 📖 文档
 
-- [📚 完整文档](https://your-username.github.io/onebot-commander/) - 详细的 API 文档和使用指南
+- [📚 完整文档](https://onebot-commander.pages.dev/) - 详细的 API 文档和使用指南
 - [🚀 快速开始](/docs/guide/) - 5分钟快速上手
 - [💡 使用示例](/docs/examples/) - 丰富的代码示例
 - [🔄 迁移指南](/docs/migration/) - 从其他库迁移
@@ -154,6 +154,6 @@ MIT License - 查看 [LICENSE](LICENSE) 文件了解详情。
 
 - [OneBot 官网](https://onebot.dev/)
 - [OneBot12 规范](https://12.onebot.dev/)
-- [GitHub 仓库](https://github.com/your-username/onebot-commander)
+- [GitHub 仓库](https://github.com/lc-cn/onebot-commander)
 - [npm 包](https://www.npmjs.com/package/onebot-commander)
-- [在线文档](https://your-username.github.io/onebot-commander/) 
+- [在线文档](https://onebot-commander.pages.dev/) 
