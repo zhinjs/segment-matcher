@@ -61,7 +61,7 @@ function isSimpleObject(obj: any): boolean {
   
   // 递归检查所有属性
   for (const key in obj) {
-    if (obj.hasOwnProperty(key)) {
+    if (Object.prototype.hasOwnProperty.call(obj, key)) {
       if (!isSimpleObject(obj[key])) {
         return false;
       }
@@ -85,7 +85,7 @@ function simpleDeepClone<T>(obj: T): T {
   
   const cloned = {} as T;
   for (const key in obj) {
-    if (obj.hasOwnProperty(key)) {
+    if (Object.prototype.hasOwnProperty.call(obj, key)) {
       cloned[key] = simpleDeepClone(obj[key]);
     }
   }
