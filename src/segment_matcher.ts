@@ -1,6 +1,7 @@
 import { MessageSegment, MatchResponse } from './types';
 import { PatternToken } from './pattern_token';
 import { MatchResult } from './match_result';
+import { TypeMatcherRegistry } from './type_matchers';
 
 /**
  * 性能优化的深拷贝函数
@@ -299,7 +300,7 @@ export class SegmentMatcher {
       case 'typed_literal':
         return SegmentMatcher.matchTypedLiteral(token, segment, segments, segmentIndex, typedLiteralFieldMap);
       case 'parameter':
-        return SegmentMatcher.matchParameter(token, segment);
+        return SegmentMatcher.matchParameter(token, segment, typedLiteralFieldMap);
       case 'rest_parameter':
         return SegmentMatcher.matchRestParameter(token, segments, segmentIndex);
       default:
@@ -451,32 +452,69 @@ export class SegmentMatcher {
   }
 
   /**
-   * 匹配参数令牌
+   * 匹配单个参数令牌和消息段
    * 
-   * 根据参数类型提取消息段数据。
-   * 文本类型提取文本内容，其他类型提取整个消息段。
+   * 根据参数令牌的类型和数据类型，匹配对应的消息段并提取参数值。
+   * 支持特殊类型规则的自动类型转换和验证。
    * 
    * @param token - 参数令牌
    * @param segment - 消息段
+   * @param typedLiteralFieldMap - 自定义字段映射
    * @returns 匹配响应
    */
-  private static matchParameter(token: PatternToken, segment: MessageSegment): MatchResponse {
-    if (!segment) return { success: false };
-    
+  private static matchParameter(token: PatternToken, segment: MessageSegment, typedLiteralFieldMap?: Record<string, string | string[]>): MatchResponse {
+    // 对于 text 类型的特殊处理（保持原有逻辑）
     if (token.dataType === 'text') {
-      // 文本类型参数：提取文本内容
-      if (segment.type === 'text') {
+      if (segment && segment.type === 'text') {
         return {
           success: true,
           matched: [segment],
           param: { name: token.name!, value: segment.data.text }
         };
       }
-    } else {
-      // 其他类型参数：提取主字段值或使用默认值对象
-      if (cachedTypeCheck(segment, token.dataType!)) {
-        let value: any = null;
-        // 根据 segment type 提取主字段
+      return { success: false };
+    }
+
+    // 使用 TypeMatcher 处理特殊类型规则
+    if (segment && segment.type === 'text' && TypeMatcherRegistry.hasSpecialMatcher(token.dataType!)) {
+      const matcher = TypeMatcherRegistry.getMatcher(token.dataType!);
+      if (matcher) {
+        const result = matcher.match(segment.data.text);
+        if (result.success) {
+          return {
+            success: true,
+            matched: [segment],
+            param: { name: token.name!, value: result.value }
+          };
+        }
+      }
+      
+      // 对于特殊类型，如果匹配失败但是是可选参数，返回失败让上层处理默认值
+      return { success: false };
+    }
+
+    // 处理其他类型参数（使用动态字段映射）
+    if (segment && cachedTypeCheck(segment, token.dataType!)) {
+      let value: any = null;
+      
+      // 使用 typedLiteralFieldMap 来动态提取字段
+      if (typedLiteralFieldMap && token.dataType! in typedLiteralFieldMap) {
+        const fieldMapping = typedLiteralFieldMap[token.dataType!];
+        
+        if (Array.isArray(fieldMapping)) {
+          // 支持多字段映射，尝试按顺序查找
+          for (const field of fieldMapping) {
+            if (field in segment.data && segment.data[field] != null) {
+              value = segment.data[field];
+              break;
+            }
+          }
+        } else if (typeof fieldMapping === 'string') {
+          // 单字段映射
+          value = segment.data[fieldMapping] || null;
+        }
+      } else {
+        // 回退到默认字段提取逻辑
         switch (segment.type) {
           case 'face':
             value = segment.data.id;
@@ -490,13 +528,15 @@ export class SegmentMatcher {
           default:
             value = null;
         }
-        return {
-          success: true,
-          matched: [segment],
-          param: { name: token.name!, value }
-        };
       }
+      
+      return {
+        success: true,
+        matched: [segment],
+        param: { name: token.name!, value }
+      };
     }
+    
     return { success: false };
   }
 

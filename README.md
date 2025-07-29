@@ -16,6 +16,13 @@ OneBot12 消息段命令解析器 - TypeScript 版本，支持 ESM/CJS 双格式
 - [🔄 迁移指南](/docs/migration/) - 从其他库迁移
 - [🤝 贡献指南](/docs/contributing/) - 参与项目开发
 
+### 🎨 新特性文档
+
+- [🎯 特殊类型规则](/docs/guide/special-type-rules.md) - 自动类型转换详解
+- [📝 可选参数](/docs/guide/optional-parameters.md) - 可选参数和默认值使用
+- [🔄 动态字段映射](/docs/guide/dynamic-field-mapping.md) - 自定义字段映射配置
+- [🏗️ TypeMatcher API](/docs/api/type-matchers.md) - TypeMatcher 系统 API 参考
+
 ## ✨ 特性
 
 - 🎯 **精确匹配**: 支持复杂的消息段模式匹配
@@ -25,6 +32,9 @@ OneBot12 消息段命令解析器 - TypeScript 版本，支持 ESM/CJS 双格式
 - 🔗 **链式调用**: 优雅的 API 设计
 - 📦 **双格式**: 同时支持 ESM 和 CommonJS
 - 🧪 **测试完善**: 90%+ 测试覆盖率
+- 🎨 **特殊类型规则**: 自动类型转换（number, integer, float, boolean）
+- 📝 **可选参数**: 支持带默认值的可选参数 `[param:type=default]`
+- 🔄 **动态字段映射**: 智能字段映射，支持多平台适配
 
 ## 🚀 快速开始
 
@@ -60,6 +70,83 @@ const segments = [
 const result = commander.match(segments);
 // 输出: Hello, Alice!
 // 输出: Uppercase: ALICE
+```
+
+### 🎨 新特性速览
+
+#### 特殊类型规则
+
+支持自动类型转换，无需手动解析：
+
+```typescript
+import { Commander } from 'onebot-commander';
+
+// 数字类型自动转换
+const ageCmd = new Commander('设置年龄 <age:number>');
+ageCmd.action((params) => {
+  console.log(`年龄: ${params.age} (类型: ${typeof params.age})`);
+});
+
+// 整数类型（只接受整数）
+const countCmd = new Commander('重复 <times:integer> 次');
+
+// 浮点数类型（必须包含小数点）
+const rateCmd = new Commander('设置比例 <rate:float>');
+
+// 布尔类型自动转换
+const enableCmd = new Commander('启用功能 <enabled:boolean>');
+enableCmd.action((params) => {
+  console.log(`功能状态: ${params.enabled} (类型: ${typeof params.enabled})`);
+});
+
+// 示例匹配
+ageCmd.match([{ type: 'text', data: { text: '设置年龄 25' } }]);
+// 输出: 年龄: 25 (类型: number)
+
+enableCmd.match([{ type: 'text', data: { text: '启用功能 true' } }]);
+// 输出: 功能状态: true (类型: boolean)
+```
+
+#### 可选参数和默认值
+
+```typescript
+// 可选参数带默认值
+const greetCmd = new Commander('你好 [name:text=世界]');
+greetCmd.action((params) => {
+  console.log(`Hello, ${params.name}!`);
+});
+
+// 数字类型的可选参数
+const configCmd = new Commander('配置 [timeout:number=30] [retries:integer=3]');
+
+// 示例匹配
+greetCmd.match([{ type: 'text', data: { text: '你好 ' } }]);
+// 输出: Hello, 世界!
+
+greetCmd.match([{ type: 'text', data: { text: '你好 张三' } }]);
+// 输出: Hello, 张三!
+```
+
+#### 动态字段映射
+
+支持自定义消息段字段映射，适配不同平台：
+
+```typescript
+// 自定义字段映射
+const customCmd = new Commander('发送图片 <img:image>', {
+  image: 'src'  // 使用 'src' 字段而不是默认的 'file' 或 'url'
+});
+
+// 多字段优先级映射
+const multiCmd = new Commander('头像 <avatar:image>', {
+  image: ['primary', 'secondary', 'file']  // 按优先级尝试
+});
+
+// 示例匹配
+customCmd.match([
+  { type: 'text', data: { text: '发送图片 ' } },
+  { type: 'image', data: { src: 'photo.jpg' } }  // 使用自定义字段
+]);
 ```
 
 ### ⚠️ 空格敏感特性

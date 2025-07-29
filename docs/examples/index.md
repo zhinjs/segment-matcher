@@ -103,6 +103,156 @@ const results = commander.match(segments);
 console.log(results[0]); // { name: 'Alice', age: 25, email: 'alice@example.com' }
 ```
 
+## 🎨 新特性示例
+
+### 4. 特殊类型规则
+
+使用自动类型转换，无需手动解析：
+
+```typescript
+// 数字类型自动转换
+const ageCmd = new Commander('设置年龄 <age:number>');
+ageCmd.action((params) => {
+  console.log(`年龄: ${params.age} (类型: ${typeof params.age})`);
+  return { age: params.age };
+});
+
+// 整数类型（只接受整数）
+const countCmd = new Commander('重复 <times:integer> 次');
+countCmd.action((params) => {
+  console.log(`重复 ${params.times} 次`);
+  return { times: params.times };
+});
+
+// 浮点数类型（必须包含小数点）
+const rateCmd = new Commander('设置比例 <rate:float>');
+rateCmd.action((params) => {
+  console.log(`比例: ${params.rate}`);
+  return { rate: params.rate };
+});
+
+// 布尔类型自动转换
+const enableCmd = new Commander('启用功能 <enabled:boolean>');
+enableCmd.action((params) => {
+  console.log(`功能状态: ${params.enabled ? '启用' : '禁用'}`);
+  return { enabled: params.enabled };
+});
+
+// 示例匹配
+ageCmd.match([{ type: 'text', data: { text: '设置年龄 25' } }]);
+// 输出: 年龄: 25 (类型: number)
+
+enableCmd.match([{ type: 'text', data: { text: '启用功能 true' } }]);
+// 输出: 功能状态: 启用
+```
+
+### 5. 可选参数和默认值
+
+```typescript
+// 可选参数带默认值
+const greetCmd = new Commander('你好 [name:text=世界]');
+greetCmd.action((params) => {
+  console.log(`Hello, ${params.name}!`);
+  return { greeting: `Hello, ${params.name}!` };
+});
+
+// 数字类型的可选参数
+const configCmd = new Commander('配置 [timeout:number=30] [retries:integer=3]');
+configCmd.action((params) => {
+  console.log(`超时: ${params.timeout}s, 重试: ${params.retries}次`);
+  return { timeout: params.timeout, retries: params.retries };
+});
+
+// 示例匹配
+greetCmd.match([{ type: 'text', data: { text: '你好 ' } }]);
+// 输出: Hello, 世界!
+
+greetCmd.match([{ type: 'text', data: { text: '你好 张三' } }]);
+// 输出: Hello, 张三!
+
+configCmd.match([{ type: 'text', data: { text: '配置 60 5' } }]);
+// 输出: 超时: 60s, 重试: 5次
+```
+
+### 6. 动态字段映射
+
+支持自定义消息段字段映射，适配不同平台：
+
+```typescript
+// 自定义字段映射
+const customCmd = new Commander('发送图片 <img:image>', {
+  image: 'src'  // 使用 'src' 字段而不是默认的 'file' 或 'url'
+});
+
+customCmd.action((params) => {
+  console.log(`图片路径: ${params.img}`);
+  return { image: params.img };
+});
+
+// 多字段优先级映射
+const multiCmd = new Commander('头像 <avatar:image>', {
+  image: ['primary', 'secondary', 'file']  // 按优先级尝试
+});
+
+multiCmd.action((params) => {
+  console.log(`头像: ${params.avatar}`);
+  return { avatar: params.avatar };
+});
+
+// 示例匹配
+customCmd.match([
+  { type: 'text', data: { text: '发送图片 ' } },
+  { type: 'image', data: { src: 'photo.jpg' } }  // 使用自定义字段
+]);
+// 输出: 图片路径: photo.jpg
+
+multiCmd.match([
+  { type: 'text', data: { text: '头像 ' } },
+  { type: 'image', data: { secondary: 'avatar.jpg', file: 'backup.jpg' } }
+]);
+// 输出: 头像: avatar.jpg (使用优先字段)
+```
+
+### 7. 组合使用新特性
+
+将所有新特性组合使用：
+
+```typescript
+// 复合命令示例
+const gameCmd = new Commander(
+  '创建房间 [玩家数:integer=4] [时间:number=60.0] [困难:boolean=false] {image:room.jpg}',
+  {
+    image: ['room_img', 'file', 'url']  // 自定义字段映射
+  }
+);
+
+gameCmd.action((params) => {
+  console.log('房间配置:');
+  console.log(`- 玩家数: ${params.玩家数} 人`);
+  console.log(`- 时间限制: ${params.时间} 秒`);
+  console.log(`- 困难模式: ${params.困难 ? '启用' : '禁用'}`);
+  
+  return {
+    players: params.玩家数,
+    timeLimit: params.时间,
+    hardMode: params.困难
+  };
+});
+
+// 测试不同的输入组合
+gameCmd.match([
+  { type: 'text', data: { text: '创建房间 ' } },
+  { type: 'image', data: { room_img: 'room.jpg' } }
+]);
+// 使用所有默认值
+
+gameCmd.match([
+  { type: 'text', data: { text: '创建房间 8 90.5 true' } },
+  { type: 'image', data: { room_img: 'room.jpg' } }
+]);
+// 自定义所有配置
+```
+
 ## 消息段类型示例
 
 ### 1. 表情消息
@@ -512,6 +662,14 @@ const segments = [
 const results = batchProcess(commanders, segments);
 console.log('批量处理结果:', results);
 ```
+
+## 🚀 更多示例
+
+- [复杂模式示例](/docs/examples/complex-patterns.md) - 复杂模式匹配和组合使用
+- [异步处理示例](/docs/examples/async-examples.md) - 异步回调和Promise处理
+- [错误处理示例](/docs/examples/error-handling.md) - 错误处理和异常情况
+- [性能优化示例](/docs/examples/performance.md) - 性能优化技巧和最佳实践
+- [新特性高级示例](/docs/examples/new-features.md) - 特殊类型规则、可选参数、动态字段映射等新特性的高级用法
 
 ## 下一步
 
