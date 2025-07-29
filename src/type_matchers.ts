@@ -1,4 +1,3 @@
-import { MessageSegment } from './types';
 
 /**
  * 类型匹配器接口
