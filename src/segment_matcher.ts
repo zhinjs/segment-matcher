@@ -19,50 +19,6 @@ function fastValidateSegments(segments: any): boolean {
 }
 
 /**
- * 优化的回调链执行器
- */
-class OptimizedCallbackChain {
-  private callbacks: CallbackFunction[];
-  
-  constructor(callbacks: CallbackFunction[]) {
-    this.callbacks = [...callbacks]; // 创建副本避免修改原数组
-  }
-  
-  /**
-   * 同步执行回调链
-   */
-  executeSync(...initialValues: any[]): any[] {
-    if (this.callbacks.length === 0) {
-      return initialValues;
-    }
-    
-    let values = initialValues;
-    for (const callback of this.callbacks) {
-      values = [callback(...values)];
-    }
-    
-    return Array.isArray(values) ? values : [values];
-  }
-  
-  /**
-   * 异步执行回调链
-   */
-  async executeAsync(...initialValues: any[]): Promise<any[]> {
-    if (this.callbacks.length === 0) {
-      return initialValues;
-    }
-    
-    let values = initialValues;
-    for (const callback of this.callbacks) {
-      const result = callback(...values);
-      values = result instanceof Promise ? [await result] : [result];
-    }
-    
-    return Array.isArray(values) ? values : [values];
-  }
-}
-
-/**
  * Segment Matcher 主类
  * 
  * 用于解析和匹配消息段的匹配器。
