@@ -139,7 +139,7 @@ export class PatternParser {
    * 解析类型化字面量
    * 
    * 解析格式为 `{type:value}` 的类型化字面量。
-   * 支持所有 OneBot12 消息段类型，如 text、face、image、at 等。
+   * 支持各种消息段类型，如 text、face、image、at 等。
    * 
    * @param pattern - 完整的模式字符串
    * @param startIndex - 开始解析的位置（'{' 的位置）

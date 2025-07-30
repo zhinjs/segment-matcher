@@ -1,6 +1,6 @@
-# 🤝 Contributing to OneBot Commander
+# 🤝 Contributing to Segment Matcher
 
-Thank you for your interest in contributing to OneBot Commander! This document provides guidelines for contributing to the project.
+Thank you for your interest in contributing to Segment Matcher! This document provides guidelines for contributing to the project.
 
 ## 📋 Table of Contents
 
@@ -30,12 +30,12 @@ This project and everyone participating in it is governed by our Code of Conduct
 1. Fork the repository on GitHub
 2. Clone your fork locally:
    ```bash
-   git clone https://github.com/YOUR_USERNAME/onebot-commander.git
-   cd onebot-commander
+   git clone https://github.com/YOUR_USERNAME/segment-matcher.git
+   cd segment-matcher
    ```
 3. Add the original repository as upstream:
    ```bash
-   git remote add upstream https://github.com/ORIGINAL_OWNER/onebot-commander.git
+   git remote add upstream https://github.com/ORIGINAL_OWNER/segment-matcher.git
    ```
 
 ## 🛠️ Development Setup
@@ -333,4 +333,4 @@ If you need help with contributing:
 
 ## 🙏 Thank You
 
-Thank you for contributing to OneBot Commander! Your contributions help make this project better for everyone. 
+Thank you for contributing to Segment Matcher! Your contributions help make this project better for everyone. 

@@ -1,6 +1,6 @@
 # 贡献指南
 
-感谢您对 onebot-commander 项目的关注！我们欢迎所有形式的贡献，包括但不限于：
+感谢您对 segment-matcher 项目的关注！我们欢迎所有形式的贡献，包括但不限于：
 
 - 🐛 Bug 报告
 - ✨ 新功能建议
@@ -20,8 +20,8 @@
 
 1. **克隆仓库**
    ```bash
-   git clone https://github.com/your-username/onebot-commander.git
-   cd onebot-commander
+   git clone https://github.com/zhinjs/segment-matcher.git
+   cd segment-matcher
    ```
 
 2. **安装依赖**
@@ -144,7 +144,7 @@ Closes #(issue number)
 ## 环境信息
 - Node.js 版本：
 - 操作系统：
-- onebot-commander 版本：
+- segment-matcher 版本：
 
 ## 问题描述
 详细描述遇到的问题。
@@ -239,7 +239,7 @@ Closes #(issue number)
 
 ## 致谢
 
-感谢所有为项目做出贡献的开发者！您的贡献让 onebot-commander 变得更好。
+感谢所有为项目做出贡献的开发者！您的贡献让 segment-matcher 变得更好。
 
 ---
 

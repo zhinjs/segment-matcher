@@ -275,7 +275,7 @@ yarn add onebot-commander@1.0.5
 
 如果在迁移过程中遇到问题：
 
-1. 查看 [GitHub Issues](https://github.com/your-username/onebot-commander/issues)
+1. 查看 [GitHub Issues](https://github.com/zhinjs/onebot-commander/issues)
 2. 阅读 [API 文档](./README.md)
 3. 运行测试用例作为参考
 4. 提交详细的错误报告

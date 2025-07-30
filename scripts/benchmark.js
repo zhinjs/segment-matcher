@@ -2,7 +2,7 @@
 
 import { Commander } from '../dist/esm/index.js';
 
-console.log('🚀 OneBot Commander Performance Benchmark\n');
+console.log('🚀 Segment Matcher Performance Benchmark\n');
 
 // 测试数据
 const testPatterns = [

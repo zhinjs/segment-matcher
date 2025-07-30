@@ -78,7 +78,7 @@ export class PatternToken implements IPatternToken {
    * 创建类型化字面量令牌
    * 
    * 用于表示特定类型的消息段，如表情、图片、@用户等。
-   * 支持所有 OneBot12 消息段类型。
+   * 支持各种消息段类型。
    * 
    * @param segmentType - 消息段类型（text、face、image、at 等）
    * @param value - 期望的值

@@ -1,7 +1,7 @@
 /**
- * OneBot Commander 自定义异常基类
+ * Segment Matcher 自定义异常基类
  * 
- * 所有 OneBot Commander 相关的异常都继承自此类。
+ * 所有 Segment Matcher 相关的异常都继承自此类。
  * 提供了统一的错误处理接口和错误信息格式。
  * 
  * @example

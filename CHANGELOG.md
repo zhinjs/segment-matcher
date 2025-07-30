@@ -57,7 +57,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## 🔗 Links
 
-- [GitHub Repository](https://github.com/your-username/onebot-commander)
+- [GitHub Repository](https://github.com/zhinjs/onebot-commander)
 - [npm Package](https://www.npmjs.com/package/onebot-commander)
 - [Documentation](README.md)
 - [Migration Guide](MIGRATION.md)

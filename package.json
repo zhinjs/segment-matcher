@@ -1,7 +1,7 @@
 {
-  "name": "onebot-commander",
-  "version": "1.0.7",
-  "description": "OneBot12 Message Segment Commander - TypeScript version with dual ESM/CJS format support",
+  "name": "segment-matcher",
+  "version": "1.0.0",
+  "description": "Segment Matcher - TypeScript version with dual ESM/CJS format support",
   "type": "module",
   "main": "./dist/cjs/index.cjs",
   "module": "./dist/esm/index.js",
@@ -37,18 +37,13 @@
     "format:check": "prettier --check src/**/*.ts",
     "docs:dev": "vitepress dev docs",
     "docs:build": "vitepress build docs",
-    "docs:preview": "vitepress preview docs",
-    "docs:deploy": "node scripts/deploy-docs.js deploy",
-    "docs:deploy:github": "node scripts/deploy-docs.js deploy github",
-    "docs:deploy:netlify": "node scripts/deploy-docs.js deploy netlify",
-    "docs:deploy:vercel": "node scripts/deploy-docs.js deploy vercel",
-    "docs:config": "node scripts/deploy-docs.js config"
+    "docs:preview": "vitepress preview docs"
   },
   "keywords": [
-    "onebot",
-    "commander",
+    "segment-matcher",
     "typescript",
     "message-segments",
+    "pattern-matching",
     "esm",
     "cjs",
     "dual-format",

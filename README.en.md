@@ -1,8 +1,8 @@
-# 🤖 OneBot Commander
+# 🤖 Segment Matcher
 
-> A powerful OneBot12 message segment command parser with TypeScript support and dual format (ESM/CJS) output
+> A powerful message segment matcher with TypeScript support and dual format (ESM/CJS) output
 
-[![npm version](https://badge.fury.io/js/onebot-commander.svg)](https://badge.fury.io/js/onebot-commander)
+[![npm version](https://badge.fury.io/js/segment-matcher.svg)](https://badge.fury.io/js/segment-matcher)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.2.2-blue.svg)](https://www.typescriptlang.org/)
 
@@ -19,7 +19,7 @@
 ## 📦 Installation
 
 ```bash
-npm install onebot-commander
+npm install segment-matcher
 ```
 
 ## 🚀 Quick Start
@@ -27,67 +27,66 @@ npm install onebot-commander
 ### Basic Usage
 
 ```javascript
-import { match } from 'onebot-commander';
+import { SegmentMatcher } from 'segment-matcher';
 
 // Simple text matching
-const matcher = match('hello <name:text>');
+const matcher = new SegmentMatcher('hello <name:text>');
 const segments = [
   { type: 'text', data: { text: 'hello world' } }
 ];
 
-const [params] = matcher.match(segments);
-console.log(params.name); // 'world'
+const result = matcher.match(segments);
+if (result) {
+  console.log(result.name); // 'world'
+}
 ```
 
 ### Chained Callback Processing
 
 ```javascript
-import { Commander } from 'onebot-commander';
+import { SegmentMatcher } from 'segment-matcher';
 
-const command = new Commander("test<arg1:text>[arg2:face]");
+const matcher = new SegmentMatcher("test<arg1:text>[arg2:face]");
 
-command
-  .action((params) => {
-    console.log('arg1:', params.arg1);        // '123'
-    console.log('arg2:', params.arg2);        // { type: 'face', data: { id: 1 } }
-    return params.arg1;
-  })
-  .action((arg1) => {
-    console.log('Processing arg1:', arg1.toUpperCase());
-    return arg1.length;
-  })
-  .action((length) => {
-    console.log('arg1 length:', length);
-  })
-  .match([
-    { type: 'text', data: { text: 'test123' } },
-    { type: 'face', data: { id: 1 } }
-  ]);
+const result = matcher.match([
+  { type: 'text', data: { text: 'test123' } },
+  { type: 'face', data: { id: 1 } }
+]);
+
+if (result) {
+  console.log('arg1:', result.arg1);        // '123'
+  console.log('arg2:', result.arg2);        // { type: 'face', data: { id: 1 } }
+  
+  const arg1 = result.arg1;
+  console.log('Processing arg1:', arg1.toUpperCase());
+  const length = arg1.length;
+  console.log('arg1 length:', length);
+}
 ```
 
 ### Async Processing
 
 ```javascript
-const asyncCommand = new Commander("test<arg1:text>");
+const matcher = new SegmentMatcher("test<arg1:text>");
 
-asyncCommand
-  .action(async (params) => {
-    // Simulate async operation
+const result = matcher.match([
+  { type: 'text', data: { text: 'test123' } }
+]);
+
+if (result) {
+  // Simulate async operation
+  (async () => {
     await new Promise(resolve => setTimeout(resolve, 100));
-    console.log('Async processing arg1:', params.arg1);
-    return params.arg1.toUpperCase();
-  })
-  .action(async (upperArg1) => {
+    console.log('Async processing arg1:', result.arg1);
+    const upperArg1 = result.arg1.toUpperCase();
+    
     // Simulate async operation
     await new Promise(resolve => setTimeout(resolve, 100));
     console.log('Async processing result:', upperArg1);
-    return upperArg1.length;
-  })
-  .matchAsync([
-    { type: 'text', data: { text: 'test123' } }
-  ]).then(([length]) => {
+    const length = upperArg1.length;
     console.log('Final result:', length);
-  });
+  })();
+}
 ```
 
 ## 📖 Detailed Usage
@@ -95,7 +94,7 @@ asyncCommand
 ### Basic Text Matching
 
 ```javascript
-import { match } from 'onebot-commander';
+import { SegmentMatcher } from 'segment-matcher';
 
 // Example 1: Simple text matching
 const matcher1 = match('hello');

@@ -310,57 +310,57 @@ describe('TypeMatcher System', () => {
   });
 
   describe('Integration with existing functionality', () => {
-    test('should maintain backward compatibility with Commander', () => {
-      // Import Commander to test integration
-      const { Commander } = require('../commander');
+    test('should maintain backward compatibility with SegmentMatcher', () => {
+      // Import SegmentMatcher to test integration
+      const { SegmentMatcher } = require('../segment_matcher');
 
       // Test that the refactored code still works with existing patterns
-      const numberCmd = new Commander('test <value:number>');
-      const integerCmd = new Commander('test <value:integer>');
-      const floatCmd = new Commander('test <value:float>');
-      const booleanCmd = new Commander('test <value:boolean>');
+      const numberCmd = new SegmentMatcher('test <value:number>');
+      const integerCmd = new SegmentMatcher('test <value:integer>');
+      const floatCmd = new SegmentMatcher('test <value:float>');
+      const booleanCmd = new SegmentMatcher('test <value:boolean>');
 
       // Test number matching
       const numberResult = numberCmd.match([{ type: 'text', data: { text: 'test 123.45' } }]);
-      expect(numberResult).toHaveLength(1);
-      expect(numberResult[0]).toEqual({ value: 123.45 });
+      expect(numberResult).not.toBeNull();
+      expect(numberResult?.params).toEqual({ value: 123.45 });
 
       // Test integer matching
       const integerResult = integerCmd.match([{ type: 'text', data: { text: 'test 123' } }]);
-      expect(integerResult).toHaveLength(1);
-      expect(integerResult[0]).toEqual({ value: 123 });
+      expect(integerResult).not.toBeNull();
+      expect(integerResult?.params).toEqual({ value: 123 });
 
       // Test float matching
       const floatResult = floatCmd.match([{ type: 'text', data: { text: 'test 123.45' } }]);
-      expect(floatResult).toHaveLength(1);
-      expect(floatResult[0]).toEqual({ value: 123.45 });
+      expect(floatResult).not.toBeNull();
+      expect(floatResult?.params).toEqual({ value: 123.45 });
 
       // Test boolean matching
       const booleanResult = booleanCmd.match([{ type: 'text', data: { text: 'test true' } }]);
-      expect(booleanResult).toHaveLength(1);
-      expect(booleanResult[0]).toEqual({ value: true });
+      expect(booleanResult).not.toBeNull();
+      expect(booleanResult?.params).toEqual({ value: true });
     });
 
     test('should work with optional parameters and default values', () => {
-      const { Commander } = require('../commander');
+      const { SegmentMatcher } = require('../segment_matcher');
 
-      const optionalCmd = new Commander('config [value:number=100]');
+      const optionalCmd = new SegmentMatcher('config [value:number=100]');
       
       // Test with missing parameter (should use default)
       const defaultResult = optionalCmd.match([{ type: 'text', data: { text: 'config ' } }]);
-      expect(defaultResult).toHaveLength(1);
-      expect(defaultResult[0]).toEqual({ value: 100 });
+      expect(defaultResult).not.toBeNull();
+      expect(defaultResult?.params).toEqual({ value: 100 });
 
       // Test with provided parameter
       const providedResult = optionalCmd.match([{ type: 'text', data: { text: 'config 200' } }]);
-      expect(providedResult).toHaveLength(1);
-      expect(providedResult[0]).toEqual({ value: 200 });
+      expect(providedResult).not.toBeNull();
+      expect(providedResult?.params).toEqual({ value: 200 });
 
       // Test with invalid format (should use default and add to remaining)
       const invalidResult = optionalCmd.match([{ type: 'text', data: { text: 'config abc' } }]);
-      expect(invalidResult).toHaveLength(2);
-      expect(invalidResult[0]).toEqual({ value: 100 });
-      expect(invalidResult[1]).toEqual({ type: 'text', data: { text: 'abc' } });
+      expect(invalidResult).not.toBeNull();
+      expect(invalidResult?.params).toEqual({ value: 100 });
+      expect(invalidResult?.remaining).toEqual([{ type: 'text', data: { text: 'abc' } }]);
     });
   });
 }); 
