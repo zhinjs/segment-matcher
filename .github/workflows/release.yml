@@ -35,9 +35,6 @@ jobs:
       - name: Build project
         run: npm run build
 
-      - name: Run benchmarks
-        run: npm run benchmark
-
       - name: Publish to npm
         run: npm publish --access public
         env:
