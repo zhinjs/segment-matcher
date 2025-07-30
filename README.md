@@ -11,17 +11,6 @@
 ## 📖 文档
 
 - [📚 完整文档](https://segment-matcher.pages.dev/) - 详细的 API 文档和使用指南
-- [🚀 快速开始](/docs/guide/) - 5分钟快速上手
-- [💡 使用示例](/docs/examples/) - 丰富的代码示例
-- [🔄 迁移指南](/docs/migration/) - 从其他库迁移
-- [🤝 贡献指南](/docs/contributing/) - 参与项目开发
-
-### 🎨 新特性文档
-
-- [🎯 特殊类型规则](/docs/guide/special-type-rules.md) - 自动类型转换详解
-- [📝 可选参数](/docs/guide/optional-parameters.md) - 可选参数和默认值使用
-- [🔄 动态字段映射](/docs/guide/dynamic-field-mapping.md) - 自定义字段映射配置
-- [🏗️ TypeMatcher API](/docs/api/type-matchers.md) - TypeMatcher 系统 API 参考
 
 ## ✨ 特性
 
@@ -223,18 +212,12 @@ npm run build
 npm run clean
 ```
 
-## 🤝 贡献
-
-欢迎贡献！请查看 [贡献指南](/docs/contributing/) 了解详情。
 
 ## 📄 许可证
 
 MIT License - 查看 [LICENSE](LICENSE) 文件了解详情。
 
 ## 🔗 相关链接
-
-- [OneBot 官网](https://onebot.dev/)
-- [OneBot12 规范](https://12.onebot.dev/)
-- [GitHub 仓库](https://github.com/lc-cn/segment-matcher)
+- [GitHub 仓库](https://github.com/zhinjs/segment-matcher)
 - [npm 包](https://www.npmjs.com/package/segment-matcher)
 - [在线文档](https://segment-matcher.pages.dev/) 
