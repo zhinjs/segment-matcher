@@ -1,4 +1,4 @@
-import { MessageSegment, CallbackFunction } from './types';
+import { MessageSegment } from './types';
 import { PatternToken } from './pattern_token';
 import { PatternParser } from './pattern_parser';
 import { BasicMatcher } from './basic_matcher';

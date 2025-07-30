@@ -33,8 +33,3 @@ export interface MatchResponse {
   param?: { name: string; value: any };
   newSegmentIndex?: number;
 }
-
-// 回调函数类型（支持同步和异步）
-export type CallbackFunction<T extends any[] = any[], R=any> = 
-  | ((...values: T) => R)
-  | ((...values: T) => Promise<R>);
