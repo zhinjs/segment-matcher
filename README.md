@@ -63,7 +63,7 @@ if (result) {
 支持自动类型转换，无需手动解析：
 
 ```typescript
-import { Commander } from 'segment-matcher';
+import { SegmentMatcher } from 'segment-matcher';
 
 // 数字类型自动转换
 const ageMatcher = new SegmentMatcher('设置年龄 <age:number>');

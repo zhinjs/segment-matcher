@@ -1,18 +1,18 @@
-import { CommanderError, PatternParseError, ValidationError, MatchError } from '../errors';
+import { MatcherError, PatternParseError, ValidationError, MatchError } from '../errors';
 
 describe('Error Classes', () => {
-  describe('CommanderError', () => {
-    test('should create CommanderError with message and code', () => {
-      const error = new CommanderError('Test error', 'TEST_ERROR', { detail: 'test' });
+  describe('MatcherError', () => {
+    test('should create MatcherError with message and code', () => {
+      const error = new MatcherError('Test error', 'TEST_ERROR', { detail: 'test' });
       
       expect(error.message).toBe('Test error');
       expect(error.code).toBe('TEST_ERROR');
       expect(error.details).toEqual({ detail: 'test' });
-      expect(error.name).toBe('CommanderError');
+      expect(error.name).toBe('MatcherError');
     });
 
-    test('should create CommanderError without details', () => {
-      const error = new CommanderError('Simple error', 'SIMPLE_ERROR');
+    test('should create MatcherError without details', () => {
+      const error = new MatcherError('Simple error', 'SIMPLE_ERROR');
       
       expect(error.message).toBe('Simple error');
       expect(error.code).toBe('SIMPLE_ERROR');
@@ -20,7 +20,7 @@ describe('Error Classes', () => {
     });
 
     test('should be instance of Error', () => {
-      const error = new CommanderError('Test', 'TEST');
+      const error = new MatcherError('Test', 'TEST');
       expect(error).toBeInstanceOf(Error);
     });
   });
@@ -45,9 +45,9 @@ describe('Error Classes', () => {
       expect(error.details?.position).toBeUndefined();
     });
 
-    test('should be instance of CommanderError', () => {
+    test('should be instance of MatcherError', () => {
       const error = new PatternParseError('Test');
-      expect(error).toBeInstanceOf(CommanderError);
+      expect(error).toBeInstanceOf(MatcherError);
     });
   });
 
@@ -71,9 +71,9 @@ describe('Error Classes', () => {
       expect(error.details?.value).toBeUndefined();
     });
 
-    test('should be instance of CommanderError', () => {
+    test('should be instance of MatcherError', () => {
       const error = new ValidationError('Test');
-      expect(error).toBeInstanceOf(CommanderError);
+      expect(error).toBeInstanceOf(MatcherError);
     });
   });
 
@@ -98,9 +98,9 @@ describe('Error Classes', () => {
       expect(error.details?.segments).toBeUndefined();
     });
 
-    test('should be instance of CommanderError', () => {
+    test('should be instance of MatcherError', () => {
       const error = new MatchError('Test');
-      expect(error).toBeInstanceOf(CommanderError);
+      expect(error).toBeInstanceOf(MatcherError);
     });
   });
 }); 

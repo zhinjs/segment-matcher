@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 const { performance } = require('perf_hooks');
-const { Commander } = require('../dist/cjs/commander.cjs');
+const { SegmentMatcher } = require('../dist/cjs/segment_matcher.cjs');
 
 /**
  * 性能基准测试
@@ -60,7 +60,7 @@ function runPerformanceTest() {
   console.log('📊 模式解析性能测试:');
   testPatterns.forEach((pattern, index) => {
     const start = performance.now();
-    const commander = new Commander(pattern);
+    const segmentMatcher = new SegmentMatcher(pattern);
     const end = performance.now();
     
     console.log(`  模式 ${index + 1}: ${(end - start).toFixed(3)}ms`);
@@ -70,18 +70,18 @@ function runPerformanceTest() {
   console.log('\n📊 匹配性能测试:');
   testSegments.forEach((segments, index) => {
     const pattern = testPatterns[Math.min(index, testPatterns.length - 1)];
-    const commander = new Commander(pattern);
+    const matcher = new SegmentMatcher(pattern);
     
     // 预热
     for (let i = 0; i < 10; i++) {
-      commander.match(segments);
+      matcher.match(segments);
     }
     
     // 实际测试
     const iterations = 1000;
     const start = performance.now();
     for (let i = 0; i < iterations; i++) {
-      commander.match(segments);
+      matcher.match(segments);
     }
     const end = performance.now();
     
@@ -96,12 +96,12 @@ function runPerformanceTest() {
   
   // 第一次解析（无缓存）
   const start1 = performance.now();
-  const commander1 = new Commander(pattern);
+  const matcher1 = new SegmentMatcher(pattern);
   const end1 = performance.now();
   
   // 第二次解析（有缓存）
   const start2 = performance.now();
-  const commander2 = new Commander(pattern);
+  const matcher2 = new SegmentMatcher(pattern);
   const end2 = performance.now();
   
   console.log(`  首次解析: ${(end1 - start1).toFixed(3)}ms`);
@@ -113,9 +113,9 @@ function runPerformanceTest() {
   const initialMemory = process.memoryUsage();
   
   // 创建大量实例
-  const commanders = [];
+  const matchers = [];
   for (let i = 0; i < 1000; i++) {
-    commanders.push(new Commander(testPatterns[i % testPatterns.length]));
+    matchers.push(new SegmentMatcher(testPatterns[i % testPatterns.length]));
   }
   
   const finalMemory = process.memoryUsage();
@@ -132,13 +132,13 @@ function runPerformanceTest() {
   // 测试并发性能
   console.log('\n📊 并发性能测试:');
   const concurrentTest = () => {
-    const commanders = testPatterns.map(pattern => new Commander(pattern));
+    const matchers = testPatterns.map(pattern => new SegmentMatcher(pattern));
     const results = [];
     
     for (let i = 0; i < 100; i++) {
       const segments = testSegments[i % testSegments.length];
-      const commander = commanders[i % commanders.length];
-      results.push(commander.match(segments));
+      const matcher = matchers[i % matchers.length];
+      results.push(matcher.match(segments));
     }
     
     return results;
@@ -156,7 +156,7 @@ function runPerformanceTest() {
   const startError = performance.now();
   
   try {
-    new Commander(errorPattern);
+    new SegmentMatcher(errorPattern);
   } catch (error) {
     // 预期错误
   }
@@ -177,21 +177,21 @@ function runMemoryLeakTest() {
   
   // 运行多轮测试
   for (let round = 0; round < 10; round++) {
-    const commanders = [];
+    const matchers = [];
     
     // 创建大量实例
     for (let i = 0; i < 100; i++) {
-      const commander = new Commander(testPatterns[i % testPatterns.length]);
-      commanders.push(commander);
+      const matcher = new SegmentMatcher(testPatterns[i % testPatterns.length]);
+      matchers.push(matcher);
       
       // 执行匹配
       testSegments.forEach(segments => {
-        commander.match(segments);
+        matcher.match(segments);
       });
     }
     
     // 清理引用
-    commanders.length = 0;
+    matchers.length = 0;
     
     // 强制垃圾回收（如果可用）
     if (global.gc) {

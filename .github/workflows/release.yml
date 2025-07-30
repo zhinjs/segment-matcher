@@ -119,9 +119,9 @@ jobs:
       - name: Upload build artifacts
         run: |
           # 创建压缩包
-          tar -czf onebot-commander-${{ github.ref_name }}.tar.gz -C dist .
+          tar -czf segment-matcher-${{ github.ref_name }}.tar.gz -C dist .
           
           # 上传到 release
-          gh release upload ${{ github.ref_name }} onebot-commander-${{ github.ref_name }}.tar.gz
+          gh release upload ${{ github.ref_name }} segment-matcher-${{ github.ref_name }}.tar.gz
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -65,10 +65,10 @@ export class SegmentMatcher {
    * @example
    * ```typescript
    * // 基础用法
-   * const commander = new Commander('hello <name:text>');
+   * const matcher = new SegmentMatcher('hello <name:text>');
    * 
    * // 自定义字段映射
-   * const customCommander = new Commander('{image:avatar.png}<name:text>', {
+   * const customSegmentMatcher = new SegmentMatcher('{image:avatar.png}<name:text>', {
    *   image: 'src'  // 使用 'src' 字段而不是默认的 'file' 或 'url'
    * });
    * ```
@@ -117,7 +117,7 @@ export class SegmentMatcher {
    * 
    * @example
    * ```typescript
-   * const commander = new Commander('hello <name:text>');
+   * const matcher = new SegmentMatcher('hello <name:text>');
    * const tokens = segmentMatcher.getTokens();
    * console.log(tokens); // 显示解析后的令牌结构
    * ```
@@ -130,19 +130,19 @@ export class SegmentMatcher {
 /**
  * 便捷函数：创建命令匹配器实例
  * 
- * 这是一个工厂函数，提供更简洁的 API 来创建 Commander 实例。
+ * 这是一个工厂函数，提供更简洁的 API 来创建 SegmentMatcher 实例。
  * 
  * @param pattern - 命令模式字符串
  * @param typedLiteralFields - 自定义的类型化字面量字段映射（可选）
- * @returns 新创建的 Commander 实例
+ * @returns 新创建的 SegmentMatcher 实例
  * 
  * @example
  * ```typescript
  * // 使用便捷函数创建实例
- * const commander = match('hello <name:text>');
+ * const matcher = match('hello <name:text>');
  * 
  * // 等同于
- * const commander = new Commander('hello <name:text>');
+ * const matcher = new SegmentMatcher('hello <name:text>');
  * ```
  */
 export function createMatcher(pattern: string, typedLiteralFields?: Record<string, string | string[]>): SegmentMatcher {

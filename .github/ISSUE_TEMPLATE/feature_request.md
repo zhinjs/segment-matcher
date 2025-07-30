@@ -28,10 +28,10 @@ assignees: ''
 
 ```typescript
 // 示例使用场景
-import { Commander } from 'onebot-commander';
+import { SegmentMatcher } from 'segment-matcher';
 
 // 新功能的预期使用方式
-const commander = new Commander('new-feature<param:text>');
+const matcher = new SegmentMatcher('new-feature<param:text>');
 // ... 更多示例
 ```
 
@@ -61,4 +61,4 @@ const commander = new Commander('new-feature<param:text>');
 
 ---
 
-**感谢您为 onebot-commander 提出改进建议！** 🌟 
+**感谢您为 segment-matcher 提出改进建议！** 🌟 

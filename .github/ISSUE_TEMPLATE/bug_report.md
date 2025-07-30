@@ -31,20 +31,20 @@ assignees: ''
 - [ ] 其他 (请说明)
 
 **Node.js 版本:** <!-- 例如: 18.17.0 -->
-**onebot-commander 版本:** <!-- 例如: 1.0.6 -->
+**segment-matcher 版本:** <!-- 例如: 1.0.6 -->
 
 ## 📋 代码示例
 
 ```typescript
 // 请提供可重现的代码示例
-import { Commander } from 'onebot-commander';
+import { SegmentMatcher } from 'segment-matcher';
 
-const commander = new Commander('test<arg:text>');
+const matcher = new SegmentMatcher('test<arg:text>');
 const segments = [
   { type: 'text', data: { text: 'test123' } }
 ];
 
-const result = commander.match(segments);
+const result = matcher.match(segments);
 console.log(result);
 ```
 
@@ -74,4 +74,4 @@ console.log(result);
 
 ---
 
-**感谢您帮助我们改进 onebot-commander！** 🚀 
+**感谢您帮助我们改进 segment-matcher！** 🚀 

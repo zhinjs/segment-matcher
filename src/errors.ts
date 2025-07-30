@@ -7,16 +7,16 @@
  * @example
  * ```typescript
  * try {
- *   const commander = new Commander('');
+ *   const matcher = new SegmentMatcher('');
  * } catch (error) {
- *   if (error instanceof CommanderError) {
+ *   if (error instanceof MatcherError) {
  *     console.log('Error code:', error.code);
  *     console.log('Error details:', error.details);
  *   }
  * }
  * ```
  */
-export class CommanderError extends Error {
+export class MatcherError extends Error {
   /**
    * 构造函数
    * 
@@ -26,7 +26,7 @@ export class CommanderError extends Error {
    */
   constructor(message: string, public code: string, public details?: any) {
     super(message);
-    this.name = 'CommanderError';
+    this.name = 'MatcherError';
   }
 }
 
@@ -39,7 +39,7 @@ export class CommanderError extends Error {
  * @example
  * ```typescript
  * try {
- *   const commander = new Commander('hello <name:invalid_type>');
+ *   const matcher = new SegmentMatcher('hello <name:invalid_type>');
  * } catch (error) {
  *   if (error instanceof PatternParseError) {
  *     console.log('Pattern:', error.details?.pattern);
@@ -48,7 +48,7 @@ export class CommanderError extends Error {
  * }
  * ```
  */
-export class PatternParseError extends CommanderError {
+export class PatternParseError extends MatcherError {
   /**
    * 构造函数
    * 
@@ -71,8 +71,8 @@ export class PatternParseError extends CommanderError {
  * @example
  * ```typescript
  * try {
- *   const commander = new Commander('hello <name:text>');
- *   commander.match(null); // 传入无效参数
+ *   const matcher = new SegmentMatcher('hello <name:text>');
+ *   matcher.match(null); // 传入无效参数
  * } catch (error) {
  *   if (error instanceof ValidationError) {
  *     console.log('Field:', error.details?.field);
@@ -81,7 +81,7 @@ export class PatternParseError extends CommanderError {
  * }
  * ```
  */
-export class ValidationError extends CommanderError {
+export class ValidationError extends MatcherError {
   /**
    * 构造函数
    * 
@@ -105,7 +105,7 @@ export class ValidationError extends CommanderError {
  * ```typescript
  * try {
  *   // 匹配过程中发生错误
- *   const result = commander.match(segments);
+ *   const result = matcher.match(segments);
  * } catch (error) {
  *   if (error instanceof MatchError) {
  *     console.log('Pattern:', error.details?.pattern);
@@ -114,7 +114,7 @@ export class ValidationError extends CommanderError {
  * }
  * ```
  */
-export class MatchError extends CommanderError {
+export class MatchError extends MatcherError {
   /**
    * 构造函数
    * 
