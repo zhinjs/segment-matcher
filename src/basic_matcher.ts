@@ -553,6 +553,7 @@ export class BasicMatcher {
    */
   private static matchRestParameter(token: PatternToken, segments: MessageSegment[], segmentIndex: number): MatchResponse {
     const restSegments: MessageSegment[] = [];
+    const restValues: any[] = [];
     let currentSegmentIndex = segmentIndex;
 
     if (!token.dataType) {
@@ -565,12 +566,47 @@ export class BasicMatcher {
         }
         currentSegmentIndex = segments.length;
       }
+      restValues.push(...restSegments);
     } else {
       // [...rest:type]，只收集指定类型的消息段
-      // 遇到第一个不匹配的类型就停止收集
-      while (currentSegmentIndex < segments.length && cachedTypeCheck(segments[currentSegmentIndex], token.dataType!)) {
-        restSegments.push(segments[currentSegmentIndex]);
-        currentSegmentIndex++;
+      // 遇到第一个不匹配的类型就停止收集，除非是空格
+      while (currentSegmentIndex < segments.length) {
+        const segment = segments[currentSegmentIndex];
+        
+        // 检查是否为空格文本段
+        const isSpace = segment.type === 'text' && segment.data?.text === ' ';
+        
+        if (cachedTypeCheck(segment, token.dataType!)) {
+          restSegments.push(segment);
+          
+          // 提取主字段值
+          let value: any = null;
+          switch (segment.type) {
+            case 'face':
+              value = segment.data.id;
+              break;
+            case 'image':
+              value = segment.data.file || segment.data.url;
+              break;
+            case 'at':
+              value = segment.data.user_id;
+              break;
+            case 'text':
+              value = segment.data.text;
+              break;
+            default:
+              value = segment;
+          }
+          restValues.push(value);
+          currentSegmentIndex++;
+        } else if (isSpace) {
+          // 如果是空格，添加到匹配结果但不添加到值列表
+          restSegments.push(segment);
+          currentSegmentIndex++;
+        } else {
+          // 遇到非空格的不匹配类型，停止收集
+          break;
+        }
       }
     }
 
@@ -578,7 +614,7 @@ export class BasicMatcher {
     return {
       success: true,
       matched: restSegments,
-      param: { name: token.name!, value: restSegments },
+      param: { name: token.name!, value: restValues },
       newSegmentIndex: currentSegmentIndex
     };
   }

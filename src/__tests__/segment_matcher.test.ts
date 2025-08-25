@@ -289,6 +289,158 @@ describe('SegmentMatcher', () => {
   });
 
   describe('Rest parameters', () => {
+    test('should match [...rest:image] pattern and extract file/url values', () => {
+      const matcher = createMatcher('test[...rest:image]');
+      const segments: MessageSegment[] = [
+        { type: 'text', data: { text: 'test' } },
+        { type: 'image', data: { file: 'test1.jpg' } },
+        { type: 'image', data: { file: 'test2.jpg' } },
+        { type: 'text', data: { text: 'hello' } }
+      ];
+
+      const result = matcher.match(segments);
+      expect(result?.matched).toEqual([
+        { type: 'text', data: { text: 'test' } },
+        { type: 'image', data: { file: 'test1.jpg' } },
+        { type: 'image', data: { file: 'test2.jpg' } }
+      ]);
+      expect(result?.params).toEqual({
+        rest: ['test1.jpg', 'test2.jpg']
+      });
+      expect(result?.remaining).toEqual([
+        { type: 'text', data: { text: 'hello' } }
+      ]);
+    });
+
+    test('should handle spaces between segments in [...rest:face] pattern', () => {
+      const matcher = createMatcher('test[...rest:face]');
+      const segments: MessageSegment[] = [
+        { type: 'text', data: { text: 'test' } },
+        { type: 'face', data: { id: 1 } },
+        { type: 'text', data: { text: ' ' } },
+        { type: 'face', data: { id: 2 } },
+        { type: 'text', data: { text: ' ' } },
+        { type: 'face', data: { id: 3 } },
+        { type: 'text', data: { text: 'hello' } }
+      ];
+
+      const result = matcher.match(segments);
+      expect(result?.matched).toEqual([
+        { type: 'text', data: { text: 'test' } },
+        { type: 'face', data: { id: 1 } },
+        { type: 'text', data: { text: ' ' } },
+        { type: 'face', data: { id: 2 } },
+        { type: 'text', data: { text: ' ' } },
+        { type: 'face', data: { id: 3 } }
+      ]);
+      expect(result?.params).toEqual({
+        rest: [1, 2, 3]
+      });
+      expect(result?.remaining).toEqual([
+        { type: 'text', data: { text: 'hello' } }
+      ]);
+    });
+
+    test('should match [...rest:face] pattern and extract id values', () => {
+      const matcher = createMatcher('test[...rest:face]');
+      const segments: MessageSegment[] = [
+        { type: 'text', data: { text: 'test' } },
+        { type: 'face', data: { id: 1 } },
+        { type: 'text', data: { text: ' ' } },
+        { type: 'face', data: { id: 2 } },
+        { type: 'text', data: { text: 'hello' } }
+      ];
+
+      const result = matcher.match(segments);
+      expect(result?.matched).toEqual([
+        { type: 'text', data: { text: 'test' } },
+        { type: 'face', data: { id: 1 } },
+        { type: 'text', data: { text: ' ' } },
+        { type: 'face', data: { id: 2 } }
+      ]);
+      expect(result?.params).toEqual({
+        rest: [1, 2]
+      });
+      expect(result?.remaining).toEqual([
+        { type: 'text', data: { text: 'hello' } }
+      ]);
+    });
+
+    test('should handle spaces between segments in [...rest:at] pattern', () => {
+      const matcher = createMatcher('test[...rest:at]');
+      const segments: MessageSegment[] = [
+        { type: 'text', data: { text: 'test' } },
+        { type: 'at', data: { user_id: 123456 } },
+        { type: 'text', data: { text: ' ' } },
+        { type: 'at', data: { user_id: 654321 } },
+        { type: 'text', data: { text: ' ' } },
+        { type: 'at', data: { user_id: 789012 } },
+        { type: 'text', data: { text: 'hello' } }
+      ];
+
+      const result = matcher.match(segments);
+      expect(result?.matched).toEqual([
+        { type: 'text', data: { text: 'test' } },
+        { type: 'at', data: { user_id: 123456 } },
+        { type: 'text', data: { text: ' ' } },
+        { type: 'at', data: { user_id: 654321 } },
+        { type: 'text', data: { text: ' ' } },
+        { type: 'at', data: { user_id: 789012 } }
+      ]);
+      expect(result?.params).toEqual({
+        rest: [123456, 654321, 789012]
+      });
+      expect(result?.remaining).toEqual([
+        { type: 'text', data: { text: 'hello' } }
+      ]);
+    });
+
+    test('should match [...rest:at] pattern and extract user_id values', () => {
+      const matcher = createMatcher('test[...rest:at]');
+      const segments: MessageSegment[] = [
+        { type: 'text', data: { text: 'test' } },
+        { type: 'at', data: { user_id: 123456 } },
+        { type: 'at', data: { user_id: 654321 } },
+        { type: 'text', data: { text: 'hello' } }
+      ];
+
+      const result = matcher.match(segments);
+      expect(result?.matched).toEqual([
+        { type: 'text', data: { text: 'test' } },
+        { type: 'at', data: { user_id: 123456 } },
+        { type: 'at', data: { user_id: 654321 } }
+      ]);
+      expect(result?.params).toEqual({
+        rest: [123456, 654321]
+      });
+      expect(result?.remaining).toEqual([
+        { type: 'text', data: { text: 'hello' } }
+      ]);
+    });
+
+    test('should match [...rest:text] pattern and extract text values', () => {
+      const matcher = createMatcher('test[...rest:text]');
+      const segments: MessageSegment[] = [
+        { type: 'text', data: { text: 'test' } },
+        { type: 'text', data: { text: 'hello' } },
+        { type: 'text', data: { text: 'world' } },
+        { type: 'face', data: { id: 1 } }
+      ];
+
+      const result = matcher.match(segments);
+      expect(result?.matched).toEqual([
+        { type: 'text', data: { text: 'test' } },
+        { type: 'text', data: { text: 'hello' } },
+        { type: 'text', data: { text: 'world' } }
+      ]);
+      expect(result?.params).toEqual({
+        rest: ['hello', 'world']
+      });
+      expect(result?.remaining).toEqual([
+        { type: 'face', data: { id: 1 } }
+      ]);
+    });
+
     test('should match [...rest] pattern', () => {
       const matcher = createMatcher('test[...rest]');
       const segments: MessageSegment[] = [
@@ -326,23 +478,19 @@ describe('SegmentMatcher', () => {
         { type: 'image', data: { file: 'test.jpg' } }
       ];
 
-      expect(matcher.match(segments)).toEqual({
-        matched: [
-          { type: 'text', data: { text: 'test' } },
-          { type: 'face', data: { id: 1 } },
-          { type: 'face', data: { id: 2 } }
-        ],
-        params: {
-          rest: [
-            { type: 'face', data: { id: 1 } },
-            { type: 'face', data: { id: 2 } }
-          ]
-        },
-        remaining: [
-          { type: 'text', data: { text: 'hello' } },
-          { type: 'image', data: { file: 'test.jpg' } }
-        ]
+      const result = matcher.match(segments);
+      expect(result?.matched).toEqual([
+        { type: 'text', data: { text: 'test' } },
+        { type: 'face', data: { id: 1 } },
+        { type: 'face', data: { id: 2 } }
+      ]);
+      expect(result?.params).toEqual({
+        rest: [1, 2]
       });
+      expect(result?.remaining).toEqual([
+        { type: 'text', data: { text: 'hello' } },
+        { type: 'image', data: { file: 'test.jpg' } }
+      ]);
     });
 
     test('should match [...rest:text] pattern', () => {
@@ -355,23 +503,19 @@ describe('SegmentMatcher', () => {
         { type: 'image', data: { file: 'test.jpg' } }
       ];
 
-      expect(matcher.match(segments)).toEqual({
-        matched: [
-          { type: 'text', data: { text: 'test' } },
-          { type: 'text', data: { text: 'hello' } },
-          { type: 'text', data: { text: 'world' } }
-        ],
-        params: {
-          rest: [
-            { type: 'text', data: { text: 'hello' } },
-            { type: 'text', data: { text: 'world' } }
-          ]
-        },
-        remaining: [
-          { type: 'face', data: { id: 1 } },
-          { type: 'image', data: { file: 'test.jpg' } }
-        ]
+      const result = matcher.match(segments);
+      expect(result?.matched).toEqual([
+        { type: 'text', data: { text: 'test' } },
+        { type: 'text', data: { text: 'hello' } },
+        { type: 'text', data: { text: 'world' } }
+      ]);
+      expect(result?.params).toEqual({
+        rest: ['hello', 'world']
       });
+      expect(result?.remaining).toEqual([
+        { type: 'face', data: { id: 1 } },
+        { type: 'image', data: { file: 'test.jpg' } }
+      ]);
     });
 
     // 新增测试用例：剩余参数为空的情况
