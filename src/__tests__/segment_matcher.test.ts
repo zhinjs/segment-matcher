@@ -1,6 +1,61 @@
 import { SegmentMatcher, createMatcher, MessageSegment, ValidationError } from '../index';
 
 describe('SegmentMatcher', () => {
+  describe('Constructor validation', () => {
+    test('should throw ValidationError for non-string pattern', () => {
+      expect(() => new SegmentMatcher(123 as any)).toThrow(ValidationError);
+      expect(() => new SegmentMatcher(null as any)).toThrow(ValidationError);
+      expect(() => new SegmentMatcher(undefined as any)).toThrow(ValidationError);
+      expect(() => new SegmentMatcher({} as any)).toThrow(ValidationError);
+    });
+
+    test('should throw ValidationError for empty pattern', () => {
+      expect(() => new SegmentMatcher('')).toThrow(ValidationError);
+      expect(() => new SegmentMatcher('   ')).toThrow(ValidationError);
+    });
+
+    test('should throw ValidationError for invalid typedLiteralFields', () => {
+      expect(() => new SegmentMatcher('test', 'not an object' as any)).toThrow(ValidationError);
+      expect(() => new SegmentMatcher('test', 123 as any)).toThrow(ValidationError);
+    });
+
+    test('should merge default and custom field mappings', () => {
+      const matcher = new SegmentMatcher('test[...rest:image]', {
+        image: 'src',  // 覆盖默认映射
+        custom: 'value'  // 新增映射
+      });
+
+      const segments: MessageSegment[] = [
+        { type: 'text', data: { text: 'test' } },
+        { type: 'image', data: { src: 'test.jpg' } }
+      ];
+
+      const result = matcher.match(segments);
+      expect(result).not.toBeNull();
+      expect(result?.matched).toEqual([
+        { type: 'text', data: { text: 'test' } },
+        { type: 'image', data: { src: 'test.jpg' } }
+      ]);
+      expect(result?.params).toEqual({
+        rest: ['test.jpg']
+      });
+    });
+
+    test('should use static create method', () => {
+      const matcher1 = SegmentMatcher.create('test');
+      const matcher2 = createMatcher('test');
+
+      expect(matcher1).toBeInstanceOf(SegmentMatcher);
+      expect(matcher2).toBeInstanceOf(SegmentMatcher);
+
+      const segments: MessageSegment[] = [
+        { type: 'text', data: { text: 'test' } }
+      ];
+
+      expect(matcher1.match(segments)).toEqual(matcher2.match(segments));
+    });
+  });
+
   describe('Basic functionality', () => {
     test('should match basic text pattern', () => {
       const matcher = createMatcher('hello');
@@ -360,6 +415,222 @@ describe('SegmentMatcher', () => {
       ]);
       expect(result?.params).toEqual({
         rest: [1, 2]
+      });
+      expect(result?.remaining).toEqual([
+        { type: 'text', data: { text: 'hello' } }
+      ]);
+    });
+
+    test('should handle type checking with invalid segment data', () => {
+      const matcher = createMatcher('test<name:text>');
+      const segments: MessageSegment[] = [
+        { type: 'text', data: { text: 'test' } },
+        { type: 'text', data: {} }  // 无效的 data
+      ];
+
+      const result = matcher.match(segments);
+      expect(result).toBeNull();
+      
+      // 测试 rest parameter 的情况
+      const restMatcher = createMatcher('test[...rest:text]');
+      const segments2: MessageSegment[] = [
+        { type: 'text', data: { text: 'test' } },
+        { type: 'text', data: {} }  // 无效的 data
+      ];
+      const result2 = restMatcher.match(segments2);
+      expect(result2).not.toBeNull();
+      expect(result2?.matched).toEqual([
+        { type: 'text', data: { text: 'test' } },
+        { type: 'text', data: {} }
+      ]);
+      expect(result2?.params).toEqual({
+        rest: [null]  // 无效的 text 字段返回 null，'test' 是模式的一部分，不应该包含在 rest 中
+      });
+    });
+
+    test('should handle field mapping with undefined data', () => {
+      const matcher = createMatcher('test[...rest:image]', {
+        image: 'src'
+      });
+      const segments: MessageSegment[] = [
+        { type: 'text', data: { text: 'test' } },
+        { type: 'image', data: {} }  // 无效的 data
+      ];
+
+      const result = matcher.match(segments);
+      expect(result).not.toBeNull();
+      expect(result?.matched).toEqual([
+        { type: 'text', data: { text: 'test' } },
+        { type: 'image', data: {} }
+      ]);
+      expect(result?.params).toEqual({
+        rest: [null]  // 无效字段映射返回 null
+      });
+      expect(result?.remaining).toEqual([]);
+    });
+
+    test('should handle text splitting with typed literal', () => {
+      const matcher = createMatcher('{text:hello}<name:text>');
+      const segments: MessageSegment[] = [
+        { type: 'text', data: { text: 'hello world' } }
+      ];
+
+      const result = matcher.match(segments);
+      expect(result).not.toBeNull();
+      expect(result?.matched).toEqual([
+        { type: 'text', data: { text: 'hello' } },
+        { type: 'text', data: { text: ' world' } }
+      ]);
+      expect(result?.params).toEqual({
+        name: ' world'
+      });
+      expect(result?.remaining).toEqual([]);
+    });
+
+    test('should handle text splitting with multiple typed literals', () => {
+      const matcher = createMatcher('{text:hello}{text:world}');
+      const segments: MessageSegment[] = [
+        { type: 'text', data: { text: 'hello world extra' } }
+      ];
+
+      const result = matcher.match(segments);
+      expect(result).not.toBeNull();
+      expect(result?.matched).toEqual([
+        { type: 'text', data: { text: 'hello' } },
+        { type: 'text', data: { text: ' ' } },
+        { type: 'text', data: { text: 'world' } }
+      ]);
+      expect(result?.params).toEqual({});
+      expect(result?.remaining).toEqual([
+        { type: 'text', data: { text: ' extra' } }
+      ]);
+    });
+
+    test('should handle whitespace pattern', () => {
+      const matcher = createMatcher('{text:hello}');  // 使用类型化字面量，不包含空格
+      const segments: MessageSegment[] = [
+        { type: 'text', data: { text: 'hello test' } }
+      ];
+
+      const result = matcher.match(segments);
+      expect(result).not.toBeNull();
+      expect(result?.matched).toEqual([
+        { type: 'text', data: { text: 'hello' } }
+      ]);
+      expect(result?.params).toEqual({});
+      expect(result?.remaining).toEqual([
+        { type: 'text', data: { text: ' test' } }
+      ]);
+    });
+
+    test('should handle empty segments with optional parameters', () => {
+      const matcher = createMatcher('[name:text][...rest:face]');  // 移除必需的 'test' 字面量
+      const segments: MessageSegment[] = [];
+
+      const result = matcher.match(segments);
+      expect(result).not.toBeNull();
+      expect(result?.matched).toEqual([]);
+      expect(result?.params).toEqual({
+        name: '',
+        rest: []
+      });
+      expect(result?.remaining).toEqual([]);
+    });
+
+    test('should handle empty segments with required parameters', () => {
+      const matcher = createMatcher('test <name:text>');
+      const segments: MessageSegment[] = [];
+
+      const result = matcher.match(segments);
+      expect(result).toBeNull();
+    });
+
+    test('should return full segment when no field mapping is found', () => {
+      const matcher = createMatcher('test[...rest:unknown]', {
+        image: ['src', 'file', 'url']  // 没有 unknown 类型的映射
+      });
+      const segments: MessageSegment[] = [
+        { type: 'text', data: { text: 'test' } },
+        { type: 'unknown', data: { value: 'data1' } },
+        { type: 'text', data: { text: ' ' } },
+        { type: 'unknown', data: { value: 'data2' } },
+        { type: 'text', data: { text: 'hello' } }
+      ];
+
+      const result = matcher.match(segments);
+      expect(result?.matched).toEqual([
+        { type: 'text', data: { text: 'test' } },
+        { type: 'unknown', data: { value: 'data1' } },
+        { type: 'text', data: { text: ' ' } },
+        { type: 'unknown', data: { value: 'data2' } }
+      ]);
+      expect(result?.params).toEqual({
+        rest: [
+          { type: 'unknown', data: { value: 'data1' } },
+          { type: 'unknown', data: { value: 'data2' } }
+        ]
+      });
+      expect(result?.remaining).toEqual([
+        { type: 'text', data: { text: 'hello' } }
+      ]);
+    });
+
+    test('should handle multiple field mapping in [...rest:image] pattern', () => {
+      const matcher = createMatcher('test[...rest:image]', {
+        image: ['src', 'file', 'url']  // 按顺序尝试这些字段
+      });
+      const segments: MessageSegment[] = [
+        { type: 'text', data: { text: 'test' } },
+        { type: 'image', data: { src: 'image1.jpg' } },
+        { type: 'text', data: { text: ' ' } },
+        { type: 'image', data: { file: 'image2.jpg' } },
+        { type: 'text', data: { text: ' ' } },
+        { type: 'image', data: { url: 'image3.jpg' } },
+        { type: 'text', data: { text: 'hello' } }
+      ];
+
+      const result = matcher.match(segments);
+      expect(result?.matched).toEqual([
+        { type: 'text', data: { text: 'test' } },
+        { type: 'image', data: { src: 'image1.jpg' } },
+        { type: 'text', data: { text: ' ' } },
+        { type: 'image', data: { file: 'image2.jpg' } },
+        { type: 'text', data: { text: ' ' } },
+        { type: 'image', data: { url: 'image3.jpg' } }
+      ]);
+      expect(result?.params).toEqual({
+        rest: ['image1.jpg', 'image2.jpg', 'image3.jpg']
+      });
+      expect(result?.remaining).toEqual([
+        { type: 'text', data: { text: 'hello' } }
+      ]);
+    });
+
+    test('should handle custom field mapping in [...rest:image] pattern', () => {
+      const matcher = createMatcher('test[...rest:image]', {
+        image: 'src'  // 使用 'src' 字段而不是默认的 'file' 或 'url'
+      });
+      const segments: MessageSegment[] = [
+        { type: 'text', data: { text: 'test' } },
+        { type: 'image', data: { src: 'image1.jpg' } },
+        { type: 'text', data: { text: ' ' } },
+        { type: 'image', data: { src: 'image2.jpg' } },
+        { type: 'text', data: { text: ' ' } },
+        { type: 'image', data: { src: 'image3.jpg' } },
+        { type: 'text', data: { text: 'hello' } }
+      ];
+
+      const result = matcher.match(segments);
+      expect(result?.matched).toEqual([
+        { type: 'text', data: { text: 'test' } },
+        { type: 'image', data: { src: 'image1.jpg' } },
+        { type: 'text', data: { text: ' ' } },
+        { type: 'image', data: { src: 'image2.jpg' } },
+        { type: 'text', data: { text: ' ' } },
+        { type: 'image', data: { src: 'image3.jpg' } }
+      ]);
+      expect(result?.params).toEqual({
+        rest: ['image1.jpg', 'image2.jpg', 'image3.jpg']
       });
       expect(result?.remaining).toEqual([
         { type: 'text', data: { text: 'hello' } }
@@ -938,6 +1209,24 @@ describe('SegmentMatcher', () => {
         const segments: MessageSegment[] = [];
 
         expect(matcher.match(segments)).toBeNull();
+      });
+
+      test('should handle text splitting with multiple matches', () => {
+        const matcher = createMatcher('{text:hello}{text:world}');
+        const segments: MessageSegment[] = [
+          { type: 'text', data: { text: 'hello world extra' } }
+        ];
+
+        const result = matcher.match(segments);
+        expect(result).not.toBeNull();
+        expect(result?.matched).toEqual([
+          { type: 'text', data: { text: 'hello' } },
+          { type: 'text', data: { text: ' ' } },
+          { type: 'text', data: { text: 'world' } }
+        ]);
+        expect(result?.remaining).toEqual([
+          { type: 'text', data: { text: ' extra' } }
+        ]);
       });
 
       test('should handle segments with missing text field', () => {

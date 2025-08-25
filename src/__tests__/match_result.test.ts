@@ -268,4 +268,26 @@ describe('MatchResult', () => {
       expect(result.params.space).toBe(' ');
     });
   });
+
+  describe('hasParam', () => {
+    test('should check if parameter exists', () => {
+      result.addParam('name', 'Alice');
+      expect(result.hasParam('name')).toBe(true);
+      expect(result.hasParam('nonexistent')).toBe(false);
+    });
+
+    test('should handle parameters with falsy values', () => {
+      result.addParam('empty', '');
+      result.addParam('zero', 0);
+      result.addParam('false', false);
+      result.addParam('null', null);
+      result.addParam('undefined', undefined);
+
+      expect(result.hasParam('empty')).toBe(true);
+      expect(result.hasParam('zero')).toBe(true);
+      expect(result.hasParam('false')).toBe(true);
+      expect(result.hasParam('null')).toBe(true);
+      expect(result.hasParam('undefined')).toBe(true);
+    });
+  });
 }); 

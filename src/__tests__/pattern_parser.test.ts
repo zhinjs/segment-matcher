@@ -283,10 +283,68 @@ describe('PatternParser', () => {
   });
 
   describe('edge cases', () => {
+    beforeEach(() => {
+      PatternParser.clearCache();
+    });
+
     test('should handle empty pattern', () => {
       const tokens = PatternParser.parse('');
-      
       expect(tokens).toHaveLength(0);
+    });
+
+    test('should use cache for repeated patterns', () => {
+      const pattern = 'hello <name:text>';
+      
+      // First call should parse and cache
+      const tokens1 = PatternParser.parse(pattern);
+      expect(PatternParser.getCacheStats().size).toBe(1);
+      
+      // Second call should use cache
+      const tokens2 = PatternParser.parse(pattern);
+      expect(tokens2).toBe(tokens1); // Same instance due to caching
+      
+      // Clear cache
+      PatternParser.clearCache();
+      expect(PatternParser.getCacheStats().size).toBe(0);
+      
+      // Third call should parse again
+      const tokens3 = PatternParser.parse(pattern);
+      expect(tokens3).not.toBe(tokens1); // Different instance after cache clear
+    });
+
+    test('should handle invalid JSON in default value', () => {
+      // 测试缺少引号的 JSON
+      const tokens1 = PatternParser.parse('[config:json={id:1,name:"test"}]');
+      expect(tokens1[0].defaultValue).toEqual({ id: 1, name: "test" });
+
+      // 测试完全无效的 JSON
+      const tokens2 = PatternParser.parse('[config:json={invalid:json:here}]');
+      expect(tokens2[0].defaultValue).toBe('{invalid:json:here}');
+
+      // 测试非 JSON 字符串
+      const tokens3 = PatternParser.parse('[text:string=hello world]');
+      expect(tokens3[0].defaultValue).toBe('hello world');
+    });
+
+    test('should handle empty literal segments', () => {
+      const tokens = PatternParser.parse('{text:hello}{text:world}');
+      expect(tokens).toHaveLength(2);
+      expect(tokens[0].type).toBe('typed_literal');
+      expect(tokens[1].type).toBe('typed_literal');
+    });
+
+    test('should handle consecutive special characters', () => {
+      const tokens = PatternParser.parse('<>{text:test}[name]');
+      expect(tokens).toHaveLength(3);
+      expect(tokens[0].type).toBe('parameter');
+      expect(tokens[1].type).toBe('typed_literal');
+      expect(tokens[2].type).toBe('parameter');
+    });
+
+    test('should throw error for unmatched braces', () => {
+      expect(() => PatternParser.parse('{unclosed')).toThrow(PatternParseError);
+      expect(() => PatternParser.parse('<unclosed')).toThrow(PatternParseError);
+      expect(() => PatternParser.parse('[unclosed')).toThrow(PatternParseError);
     });
 
     test('should handle pattern with only special characters', () => {
