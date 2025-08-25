@@ -2,7 +2,7 @@ import { MessageSegment, MatchResponse } from './types';
 import { PatternToken } from './pattern_token';
 import { MatchResult } from './match_result';
 import { TypeMatcherRegistry } from './type_matchers';
-import { FieldMapping, FieldMappingConfig, extractFieldValue } from './field_mapping';
+import { FieldMappingConfig, extractFieldValue } from './field_mapping';
 
 /**
  * 性能优化的深拷贝函数
@@ -392,7 +392,7 @@ export class BasicMatcher {
 
     // text 类型特殊处理，允许包含匹配
     if (segment.type === 'text' && typeof value === 'string' && value.includes(token.value)) {
-      const { beforeText, matchedText, afterText } = optimizedSplitText(value, token.value);
+      const { beforeText, afterText } = optimizedSplitText(value, token.value);
       const matched: MessageSegment[] = [];
       if (beforeText) {
         matched.push({ type: 'text', data: { text: beforeText } });
