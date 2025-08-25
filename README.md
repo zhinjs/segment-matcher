@@ -3,10 +3,10 @@
 [![npm version](https://img.shields.io/npm/v/segment-matcher.svg)](https://www.npmjs.com/package/segment-matcher)
 [![npm downloads](https://img.shields.io/npm/dm/segment-matcher.svg)](https://www.npmjs.com/package/segment-matcher)
 [![License](https://img.shields.io/npm/l/segment-matcher.svg)](https://github.com/zhinjs/segment-matcher/blob/main/LICENSE)
-[![Test Coverage](https://img.shields.io/badge/coverage-90%25-brightgreen.svg)](https://github.com/zhinjs/segment-matcher)
+[![Test Coverage](https://img.shields.io/badge/coverage-91%25-brightgreen.svg)](https://github.com/zhinjs/segment-matcher)
 [![Node.js Version](https://img.shields.io/node/v/segment-matcher.svg)](https://nodejs.org/)
 
-消息段匹配器 - TypeScript 版本，支持 ESM/CJS 双格式
+消息段匹配器 - 高性能、类型安全的消息段模式匹配库，支持 ESM/CJS 双格式。
 
 ## 📖 文档
 
@@ -14,16 +14,47 @@
 
 ## ✨ 特性
 
-- 🎯 **精确匹配**: 支持复杂的消息段模式匹配
-- ⚡ **高性能**: 基于优化的匹配算法，性能优异
-- 🔧 **灵活配置**: 支持自定义类型化字面量字段映射
-- 🛡️ **类型安全**: 完整的 TypeScript 支持
-- 🔗 **链式调用**: 优雅的 API 设计
-- 📦 **双格式**: 同时支持 ESM 和 CommonJS
-- 🧪 **测试完善**: 90%+ 测试覆盖率
-- 🎨 **特殊类型规则**: 自动类型转换（number, integer, float, boolean）
-- 📝 **可选参数**: 支持带默认值的可选参数 `[param:type=default]`
-- 🔄 **动态字段映射**: 智能字段映射，支持多平台适配
+- 🎯 **精确匹配**: 支持复杂的消息段模式匹配，包括字面量、类型化字面量、参数等
+- ⚡ **高性能**: 
+  - 优化的匹配算法
+  - 智能缓存系统（类型检查缓存、模式解析缓存）
+  - 针对大小数组的优化策略
+- 🔧 **灵活配置**: 
+  - 支持自定义类型化字面量字段映射
+  - 支持多字段优先级映射
+  - 支持动态字段提取
+- 🛡️ **类型安全**: 
+  - 完整的 TypeScript 类型定义
+  - 运行时类型检查
+  - 智能类型推导
+- 🔗 **模块化设计**: 
+  - 清晰的模块划分
+  - 低耦合高内聚
+  - 易于扩展
+- 📦 **双格式支持**: 
+  - ESM (ECMAScript Modules)
+  - CommonJS
+- 🧪 **测试完善**: 
+  - 91%+ 测试覆盖率
+  - 完整的单元测试
+  - 边界情况测试
+  - 性能测试
+- 🎨 **特殊类型规则**: 
+  - 数字类型 (`number`)
+  - 整数类型 (`integer`)
+  - 浮点数类型 (`float`)
+  - 布尔类型 (`boolean`)
+  - 文本类型 (`text`)
+- 📝 **参数系统**: 
+  - 必需参数 (`<param:type>`)
+  - 可选参数 (`[param:type]`)
+  - 带默认值的可选参数 (`[param:type=default]`)
+  - 剩余参数 (`[...rest:type]`)
+- 🔄 **字段映射**: 
+  - 单字段映射
+  - 多字段优先级映射
+  - 动态字段提取
+- 🚦 **空格敏感**: 精确的空格匹配，确保命令解析的准确性
 
 ## 🚀 快速开始
 
@@ -48,146 +79,91 @@ const segments = [
 
 const result = matcher.match(segments);
 if (result) {
-  console.log(`Hello, ${result.name}!`);
-  const upperName = result.name.toUpperCase();
-  console.log(`Uppercase: ${upperName}`);
+  console.log('匹配的消息段:', result.matched);
+  console.log('提取的参数:', result.params);
+  console.log('剩余的消息段:', result.remaining);
 }
-// 输出: Hello, Alice!
-// 输出: Uppercase: ALICE
 ```
 
-### 🎨 新特性速览
+### 🎨 高级特性
 
-#### 特殊类型规则
-
-支持自动类型转换，无需手动解析：
+#### 1. 类型化字面量
 
 ```typescript
-import { SegmentMatcher } from 'segment-matcher';
+// 匹配特定类型的消息段
+const matcher = new SegmentMatcher('{text:hello}{at:123456}');
 
-// 数字类型自动转换
-const ageMatcher = new SegmentMatcher('设置年龄 <age:number>');
-const ageResult = ageMatcher.match([{ type: 'text', data: { text: '设置年龄 25' } }]);
-if (ageResult) {
-  console.log(`年龄: ${ageResult.age} (类型: ${typeof ageResult.age})`);
-}
-// 输出: 年龄: 25 (类型: number)
-
-// 整数类型（只接受整数）
-const countMatcher = new SegmentMatcher('重复 <times:integer> 次');
-
-// 浮点数类型（必须包含小数点）
-const rateMatcher = new SegmentMatcher('设置比例 <rate:float>');
-
-// 布尔类型自动转换
-const enableMatcher = new SegmentMatcher('启用功能 <enabled:boolean>');
-const enableResult = enableMatcher.match([{ type: 'text', data: { text: '启用功能 true' } }]);
-if (enableResult) {
-  console.log(`功能状态: ${enableResult.enabled} (类型: ${typeof enableResult.enabled})`);
-}
-// 输出: 功能状态: true (类型: boolean)
-```
-
-#### 可选参数和默认值
-
-```typescript
-// 可选参数带默认值
-const greetMatcher = new SegmentMatcher('你好 [name:text=世界]');
-
-// 示例匹配
-const greetResult1 = greetMatcher.match([{ type: 'text', data: { text: '你好 ' } }]);
-if (greetResult1) {
-  console.log(`Hello, ${greetResult1.name}!`);
-}
-// 输出: Hello, 世界!
-
-const greetResult2 = greetMatcher.match([{ type: 'text', data: { text: '你好 张三' } }]);
-if (greetResult2) {
-  console.log(`Hello, ${greetResult2.name}!`);
-}
-// 输出: Hello, 张三!
-
-// 数字类型的可选参数
-const configMatcher = new SegmentMatcher('配置 [timeout:number=30] [retries:integer=3]');
-```
-
-#### 动态字段映射
-
-支持自定义消息段字段映射，适配不同平台：
-
-```typescript
-// 自定义字段映射
-const customMatcher = new SegmentMatcher('发送图片 <img:image>', {
-  image: 'src'  // 使用 'src' 字段而不是默认的 'file' 或 'url'
-});
-
-// 多字段优先级映射
-const multiMatcher = new SegmentMatcher('头像 <avatar:image>', {
-  image: ['primary', 'secondary', 'file']  // 按优先级尝试
-});
-
-// 示例匹配
-const customResult = customMatcher.match([
-  { type: 'text', data: { text: '发送图片 ' } },
-  { type: 'image', data: { src: 'photo.jpg' } }  // 使用自定义字段
+// 匹配结果包含完整的消息段信息
+const result = matcher.match([
+  { type: 'text', data: { text: 'hello' } },
+  { type: 'at', data: { user_id: 123456 } }
 ]);
 ```
 
-### ⚠️ 空格敏感特性
-
-Segment Matcher 对空格非常敏感，这是确保命令精确匹配的重要特性：
+#### 2. 剩余参数匹配
 
 ```typescript
-// 模式: "ping [count:number={value:1}]"
-const matcher = new SegmentMatcher('ping [count:number={value:1}]'); // "ping " 后面的空格
+// 收集所有剩余的图片
+const matcher = new SegmentMatcher('图片[...images:image]');
 
-// ✅ 用户输入 "ping " - 匹配成功
-const segments1 = [{ type: 'text', data: { text: 'ping ' } }];
-const result1 = matcher.match(segments1);
-if (result1) {
-  const count = result1.count || { value: 1 };
-  console.log(`Pong! (${count.value} times)`);
-}
+const result = matcher.match([
+  { type: 'text', data: { text: '图片' } },
+  { type: 'image', data: { file: '1.jpg' } },
+  { type: 'image', data: { file: '2.jpg' } }
+]);
 
-// ❌ 用户输入 "ping" - 匹配失败
-const segments2 = [{ type: 'text', data: { text: 'ping' } }];
-const result2 = matcher.match(segments2); // null
+// result.params.images 将包含所有图片的 URL
 ```
 
-## 📚 文档站
+#### 3. 自定义字段映射
 
-本项目包含完整的文档站，使用 VitePress 构建：
+```typescript
+// 自定义字段映射规则
+const matcher = new SegmentMatcher('图片<img:image>', {
+  image: ['url', 'file', 'src']  // 按优先级尝试这些字段
+});
 
-### 本地开发
-
-```bash
-# 启动开发服务器
-npm run docs:dev
-
-# 构建文档
-npm run docs:build
-
-# 预览构建结果
-npm run docs:preview
+// 匹配时会按照指定的字段优先级提取值
+const result = matcher.match([
+  { type: 'text', data: { text: '图片' } },
+  { type: 'image', data: { url: 'https://example.com/image.jpg' } }
+]);
 ```
 
-### 部署
+#### 4. 空格敏感匹配
 
-```bash
-# 部署到 GitHub Pages
-npm run docs:deploy:github
+```typescript
+// 模式中的空格必须精确匹配
+const matcher = new SegmentMatcher('at <user:at> <message:text>');
 
-# 部署到 Netlify
-npm run docs:deploy:netlify
+// 正确的消息段（注意空格）
+const segments = [
+  { type: 'text', data: { text: 'at ' } },
+  { type: 'at', data: { user_id: 123456 } },
+  { type: 'text', data: { text: ' hello' } }
+];
 
-# 部署到 Vercel
-npm run docs:deploy:vercel
-
-# 生成部署配置
-npm run docs:config
+// 错误的消息段（缺少空格）
+const wrongSegments = [
+  { type: 'text', data: { text: 'at' } },
+  { type: 'at', data: { user_id: 123456 } },
+  { type: 'text', data: { text: 'hello' } }
+];
 ```
 
-访问 http://localhost:5173 查看本地文档。
+### ⚠️ 注意事项
+
+1. **空格敏感性**
+   - 模式中的空格必须精确匹配
+   - 使用类型化字面量可以控制空格匹配行为
+
+2. **类型安全**
+   - 建议启用 TypeScript 的严格模式
+   - 使用类型断言时要小心
+
+3. **性能优化**
+   - 对于频繁使用的模式，重用 `SegmentMatcher` 实例
+   - 合理使用字段映射来避免不必要的字段访问
 
 ## 🧪 测试
 
@@ -197,9 +173,6 @@ npm test
 
 # 运行测试并生成覆盖率报告
 npm run test:coverage
-
-# 运行基准测试
-npm run benchmark
 ```
 
 ## 📦 构建
@@ -212,7 +185,6 @@ npm run build
 npm run clean
 ```
 
-
 ## 📄 许可证
 
 MIT License - 查看 [LICENSE](LICENSE) 文件了解详情。
@@ -220,4 +192,4 @@ MIT License - 查看 [LICENSE](LICENSE) 文件了解详情。
 ## 🔗 相关链接
 - [GitHub 仓库](https://github.com/zhinjs/segment-matcher)
 - [npm 包](https://www.npmjs.com/package/segment-matcher)
-- [在线文档](https://segment-matcher.pages.dev/) 
+- [在线文档](https://segment-matcher.pages.dev/)

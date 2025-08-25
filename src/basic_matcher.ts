@@ -2,6 +2,7 @@ import { MessageSegment, MatchResponse } from './types';
 import { PatternToken } from './pattern_token';
 import { MatchResult } from './match_result';
 import { TypeMatcherRegistry } from './type_matchers';
+import { FieldMapping, FieldMappingConfig, extractFieldValue } from './field_mapping';
 
 /**
  * 性能优化的深拷贝函数
@@ -178,7 +179,7 @@ export class BasicMatcher {
    * });
    * ```
    */
-  static match(pattern: PatternToken[], segments: MessageSegment[], typedLiteralFieldMap?: Record<string, string | string[]>): MatchResult | null {
+  static match(pattern: PatternToken[], segments: MessageSegment[], typedLiteralFieldMap?: FieldMappingConfig): MatchResult | null {
     // 快速路径：空模式或空消息段
     if (!pattern.length) {
       return segments.length ? new MatchResult() : null;
@@ -293,7 +294,7 @@ export class BasicMatcher {
    * @param typedLiteralFieldMap - 自定义字段映射
    * @returns 匹配响应
    */
-  private static matchToken(token: PatternToken, segment: MessageSegment, segments: MessageSegment[], segmentIndex: number, typedLiteralFieldMap?: Record<string, string | string[]>): MatchResponse {
+  private static matchToken(token: PatternToken, segment: MessageSegment, segments: MessageSegment[], segmentIndex: number, typedLiteralFieldMap?: FieldMappingConfig): MatchResponse {
     switch (token.type) {
       case 'literal':
         return BasicMatcher.matchLiteral(token, segment, segments, segmentIndex);
@@ -365,7 +366,7 @@ export class BasicMatcher {
    * @param typedLiteralFieldMap - 自定义字段映射
    * @returns 匹配响应
    */
-  private static matchTypedLiteral(token: PatternToken, segment: MessageSegment, segments: MessageSegment[], segmentIndex: number, typedLiteralFieldMap?: Record<string, string | string[]>): MatchResponse {
+  private static matchTypedLiteral(token: PatternToken, segment: MessageSegment, segments: MessageSegment[], segmentIndex: number, typedLiteralFieldMap?: FieldMappingConfig): MatchResponse {
     // 快速路径：类型检查
     if (!cachedTypeCheck(segment, token.segmentType!)) {
       return { success: false };
@@ -376,76 +377,38 @@ export class BasicMatcher {
       return { success: false };
     }
     
-    // 处理数组字段：只要其中一个匹配即可
-    if (Array.isArray(field)) {
-      for (const singleField of field) {
-        const fieldValue = segment.data[singleField];
-        if (fieldValue === undefined) continue;
-        
-        // 精确匹配
-        if (String(fieldValue) === token.value) {
-          return {
-            success: true,
-            matched: [segment],
-            newSegmentIndex: segmentIndex + 1
-          };
-        }
-        
-        // text 类型特殊处理，允许包含匹配
-        if (segment.type === 'text' && typeof fieldValue === 'string' && fieldValue.includes(token.value)) {
-          const { beforeText, matchedText, afterText } = optimizedSplitText(fieldValue, token.value);
-          const matched: MessageSegment[] = [];
-          if (beforeText) {
-            matched.push({ type: 'text', data: { text: beforeText } });
-          }
-          matched.push({ type: 'text', data: { text: matchedText } });
-          if (afterText) {
-            optimizedArrayInsert(segments, segmentIndex + 1, {
-              type: 'text',
-              data: { text: afterText }
-            });
-          }
-          return {
-            success: true,
-            matched,
-            newSegmentIndex: segmentIndex + 1
-          };
-        }
+    // 提取字段值
+    const value = extractFieldValue(segment, field);
+    if (value === null) return { success: false };
+
+    // 精确匹配
+    if (String(value) === token.value) {
+      return {
+        success: true,
+        matched: [segment],
+        newSegmentIndex: segmentIndex + 1
+      };
+    }
+
+    // text 类型特殊处理，允许包含匹配
+    if (segment.type === 'text' && typeof value === 'string' && value.includes(token.value)) {
+      const { beforeText, matchedText, afterText } = optimizedSplitText(value, token.value);
+      const matched: MessageSegment[] = [];
+      if (beforeText) {
+        matched.push({ type: 'text', data: { text: beforeText } });
       }
-    } else {
-      // 处理单个字段
-      const fieldValue = segment.data[field];
-      if (fieldValue === undefined) return { success: false };
-      
-      // 精确匹配
-      if (String(fieldValue) === token.value) {
-        return {
-          success: true,
-          matched: [segment],
-          newSegmentIndex: segmentIndex + 1
-        };
+      matched.push({ type: 'text', data: { text: token.value } });  // 使用原始的 token.value 而不是 matchedText
+      if (afterText) {
+        optimizedArrayInsert(segments, segmentIndex + 1, {
+          type: 'text',
+          data: { text: afterText }
+        });
       }
-      
-      // text 类型特殊处理，允许包含匹配
-      if (segment.type === 'text' && typeof fieldValue === 'string' && fieldValue.includes(token.value)) {
-        const { beforeText, matchedText, afterText } = optimizedSplitText(fieldValue, token.value);
-        const matched: MessageSegment[] = [];
-        if (beforeText) {
-          matched.push({ type: 'text', data: { text: beforeText } });
-        }
-        matched.push({ type: 'text', data: { text: token.value } });  // 使用原始的 token.value 而不是 matchedText
-        if (afterText) {
-          optimizedArrayInsert(segments, segmentIndex + 1, {
-            type: 'text',
-            data: { text: afterText }
-          });
-        }
-        return {
-          success: true,
-          matched,
-          newSegmentIndex: segmentIndex + 1
-        };
-      }
+      return {
+        success: true,
+        matched,
+        newSegmentIndex: segmentIndex + 1
+      };
     }
     
     return { success: false };
@@ -462,7 +425,7 @@ export class BasicMatcher {
    * @param typedLiteralFieldMap - 自定义字段映射
    * @returns 匹配响应
    */
-  private static matchParameter(token: PatternToken, segment: MessageSegment, typedLiteralFieldMap?: Record<string, string | string[]>): MatchResponse {
+  private static matchParameter(token: PatternToken, segment: MessageSegment, typedLiteralFieldMap?: FieldMappingConfig): MatchResponse {
     // 对于 text 类型的特殊处理（保持原有逻辑）
     if (token.dataType === 'text') {
       if (segment && segment.type === 'text') {
@@ -504,19 +467,7 @@ export class BasicMatcher {
       // 使用 typedLiteralFieldMap 来动态提取字段
       if (typedLiteralFieldMap && token.dataType! in typedLiteralFieldMap) {
         const fieldMapping = typedLiteralFieldMap[token.dataType!];
-        
-        if (Array.isArray(fieldMapping)) {
-          // 支持多字段映射，尝试按顺序查找
-          for (const field of fieldMapping) {
-            if (field in segment.data && segment.data[field] != null) {
-              value = segment.data[field];
-              break;
-            }
-          }
-        } else if (typeof fieldMapping === 'string') {
-          // 单字段映射
-          value = segment.data[fieldMapping] || null;
-        }
+        value = extractFieldValue(segment, fieldMapping);
       } else {
         // 回退到默认字段提取逻辑
         switch (segment.type) {
@@ -555,7 +506,7 @@ export class BasicMatcher {
    * @param segmentIndex - 开始收集的位置
    * @returns 匹配响应
    */
-  private static matchRestParameter(token: PatternToken, segments: MessageSegment[], segmentIndex: number, typedLiteralFieldMap?: Record<string, string | string[]>): MatchResponse {
+  private static matchRestParameter(token: PatternToken, segments: MessageSegment[], segmentIndex: number, typedLiteralFieldMap?: FieldMappingConfig): MatchResponse {
     const restSegments: MessageSegment[] = [];
     const restValues: any[] = [];
     let currentSegmentIndex = segmentIndex;
@@ -602,19 +553,7 @@ export class BasicMatcher {
           // 使用 typedLiteralFieldMap 来提取字段
           else if (typedLiteralFieldMap && token.dataType! in typedLiteralFieldMap) {
             const fieldMapping = typedLiteralFieldMap[token.dataType!];
-            
-            if (Array.isArray(fieldMapping)) {
-              // 支持多字段映射，尝试按顺序查找
-              for (const field of fieldMapping) {
-                if (field in segment.data && segment.data[field] != null) {
-                  value = segment.data[field];
-                  break;
-                }
-              }
-            } else if (typeof fieldMapping === 'string') {
-              // 单字段映射
-              value = segment.data[fieldMapping] || null;
-            }
+            value = extractFieldValue(segment, fieldMapping);
             restValues.push(value);
           } else {
             // 如果没有找到映射，返回整个消息段

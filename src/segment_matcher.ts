@@ -4,6 +4,7 @@ import { PatternParser } from './pattern_parser';
 import { BasicMatcher } from './basic_matcher';
 import { MatchResult } from './match_result';
 import { ValidationError } from './errors';
+import { FieldMappingConfig } from './field_mapping';
 
 /**
  * 快速参数验证
@@ -32,7 +33,7 @@ export class SegmentMatcher {
   private tokens: PatternToken[];
   
   /** 类型化字面量的字段映射配置 */
-  private typedLiteralFields: Record<string, string | string[]>;
+  private typedLiteralFields: FieldMappingConfig;
 
   /**
    * 默认的类型化字面量字段映射规则
@@ -43,14 +44,14 @@ export class SegmentMatcher {
    * - image: 使用 'file' 或 'url' 字段（支持多字段）
    * - at: 使用 'user_id' 字段
    */
-  static DEFAULT_TYPED_LITERAL_FIELD_MAP: Record<string, string | string[]> = {
+  static DEFAULT_TYPED_LITERAL_FIELD_MAP: FieldMappingConfig = {
     text: 'text',
     face: 'id',
     image: ['file', 'url'],
     at: 'user_id',
   };
 
-  static create(pattern: string, typedLiteralFields: Record<string, string | string[]>={...SegmentMatcher.DEFAULT_TYPED_LITERAL_FIELD_MAP}): SegmentMatcher {
+  static create(pattern: string, typedLiteralFields: FieldMappingConfig={...SegmentMatcher.DEFAULT_TYPED_LITERAL_FIELD_MAP}): SegmentMatcher {
     return new SegmentMatcher(pattern, typedLiteralFields);
   }
 
@@ -73,7 +74,7 @@ export class SegmentMatcher {
    * });
    * ```
    */
-  constructor(pattern: string, typedLiteralFields: Record<string, string | string[]>={...SegmentMatcher.DEFAULT_TYPED_LITERAL_FIELD_MAP}) {
+  constructor(pattern: string, typedLiteralFields: FieldMappingConfig={...SegmentMatcher.DEFAULT_TYPED_LITERAL_FIELD_MAP}) {
     // 参数验证：确保模式是有效的字符串
     if (typeof pattern !== 'string') {
       throw new ValidationError('Pattern must be a string', 'pattern', pattern);
@@ -145,6 +146,6 @@ export class SegmentMatcher {
  * const matcher = new SegmentMatcher('hello <name:text>');
  * ```
  */
-export function createMatcher(pattern: string, typedLiteralFields?: Record<string, string | string[]>): SegmentMatcher {
+export function createMatcher(pattern: string, typedLiteralFields?: FieldMappingConfig): SegmentMatcher {
   return SegmentMatcher.create(pattern, typedLiteralFields);
 } 

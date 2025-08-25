@@ -1200,6 +1200,59 @@ describe('SegmentMatcher', () => {
 
         expect(matcher).toBeInstanceOf(SegmentMatcher);
       });
+
+      test('should work with dynamic field extractors', () => {
+        // 自定义提取器
+        const customMapping = {
+          image: (segment: MessageSegment) => {
+            // 根据条件选择不同的字段
+            if ('url' in segment.data) return segment.data.url;
+            if ('file' in segment.data) return segment.data.file;
+            if ('base64' in segment.data) return segment.data.base64;
+            return null;
+          },
+          face: (segment: MessageSegment) => {
+            // 组合多个字段
+            const { id, name } = segment.data;
+            return name ? `${id}#${name}` : id;
+          }
+        };
+
+        const matcher = createMatcher('test<img:image><emoji:face>', customMapping);
+
+        // 测试 URL 图片
+        const result1 = matcher.match([
+          { type: 'text', data: { text: 'test' } },
+          { type: 'image', data: { url: 'https://example.com/image.jpg' } },
+          { type: 'face', data: { id: 1, name: 'smile' } }
+        ]);
+        expect(result1?.params).toEqual({
+          img: 'https://example.com/image.jpg',
+          emoji: '1#smile'
+        });
+
+        // 测试文件图片
+        const result2 = matcher.match([
+          { type: 'text', data: { text: 'test' } },
+          { type: 'image', data: { file: 'local.jpg' } },
+          { type: 'face', data: { id: 2 } }
+        ]);
+        expect(result2?.params).toEqual({
+          img: 'local.jpg',
+          emoji: 2
+        });
+
+        // 测试 Base64 图片
+        const result3 = matcher.match([
+          { type: 'text', data: { text: 'test' } },
+          { type: 'image', data: { base64: 'data:image/png;base64,...' } },
+          { type: 'face', data: { id: 3, name: 'wink' } }
+        ]);
+        expect(result3?.params).toEqual({
+          img: 'data:image/png;base64,...',
+          emoji: '3#wink'
+        });
+      });
     });
 
     // 新增测试用例：边界情况

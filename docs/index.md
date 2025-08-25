@@ -1,16 +1,93 @@
 # Segment Matcher
 
-一个强大的 TypeScript 消息段匹配器，专为 OneBot 协议设计，支持空格敏感的模式匹配和类型化参数提取。
+高性能、类型安全的消息段模式匹配库。
 
-## ✨ 核心特性
+## 特性一览
 
-- 🎯 **空格敏感匹配** - 精确控制命令格式，避免误匹配
-- 🔧 **类型化参数** - 自动类型转换和验证
-- ⚡ **高性能** - 智能缓存和高效匹配算法
-- 🛡️ **类型安全** - 完整的 TypeScript 支持
-- 🔄 **灵活配置** - 自定义字段映射和默认值
+### 🎯 精确匹配
+- 支持字面量匹配：`hello world`
+- 支持类型化字面量：`{text:hello}{at:123456}`
+- 支持参数提取：`<name:text>`
+- 支持可选参数：`[count:number]`
+- 支持默认值：`[count:number=1]`
+- 支持剩余参数：`[...rest:image]`
 
-## 🚀 快速开始
+### ⚡ 高性能
+- 优化的匹配算法
+- 智能缓存系统
+  - 类型检查缓存
+  - 模式解析缓存
+- 针对大小数组的优化策略
+- 智能的深拷贝策略
+
+### 🛡️ 类型安全
+- 完整的 TypeScript 类型定义
+- 运行时类型检查
+- 智能类型推导
+- 类型安全的参数提取
+
+### 🔧 灵活配置
+- 自定义字段映射
+  ```typescript
+  const matcher = new SegmentMatcher('图片<img:image>', {
+    image: ['url', 'file', 'src']  // 按优先级尝试这些字段
+  });
+  ```
+- 多字段优先级映射
+- 动态字段提取
+- 自定义类型规则
+
+### 🎨 特殊类型规则
+- `number`: 支持整数和小数
+  ```typescript
+  const matcher = new SegmentMatcher('数字<n:number>');
+  // 可以匹配：'数字123' 或 '数字3.14'
+  ```
+- `integer`: 仅支持整数
+  ```typescript
+  const matcher = new SegmentMatcher('整数<n:integer>');
+  // 只匹配：'整数123'，不匹配：'整数3.14'
+  ```
+- `float`: 必须包含小数点
+  ```typescript
+  const matcher = new SegmentMatcher('小数<n:float>');
+  // 只匹配：'小数3.14'，不匹配：'小数123'
+  ```
+- `boolean`: 布尔值
+  ```typescript
+  const matcher = new SegmentMatcher('开关<enabled:boolean>');
+  // 匹配：'开关true' 或 '开关false'
+  ```
+
+### 📝 参数系统
+- 必需参数：`<param:type>`
+- 可选参数：`[param:type]`
+- 带默认值：`[param:type=default]`
+- 剩余参数：`[...rest:type]`
+
+### 🔄 字段映射
+- 单字段映射
+  ```typescript
+  { image: 'url' }  // 使用 url 字段
+  ```
+- 多字段优先级
+  ```typescript
+  { image: ['url', 'file', 'src'] }  // 按顺序尝试
+  ```
+- 动态字段提取
+  ```typescript
+  { custom: (segment) => segment.data.value }
+  ```
+
+## 快速开始
+
+### 安装
+
+```bash
+npm install segment-matcher
+```
+
+### 基础使用
 
 ```typescript
 import { SegmentMatcher } from 'segment-matcher';
@@ -18,77 +95,91 @@ import { SegmentMatcher } from 'segment-matcher';
 // 创建匹配器
 const matcher = new SegmentMatcher('hello <name:text>');
 
-// 匹配消息段
+// 准备消息段
 const segments = [
   { type: 'text', data: { text: 'hello Alice' } }
 ];
 
+// 执行匹配
 const result = matcher.match(segments);
 if (result) {
-  console.log(`Hello, ${result.name}!`); // Hello, Alice!
+  console.log('匹配的消息段:', result.matched);
+  console.log('提取的参数:', result.params);
+  console.log('剩余的消息段:', result.remaining);
 }
 ```
 
-## 📦 安装
+### 匹配结果
 
-```bash
-npm install segment-matcher
-```
-
-## 🎯 主要功能
-
-### 空格敏感特性
-确保命令格式的精确匹配，避免误触发：
+匹配成功时，返回一个包含以下字段的对象：
 
 ```typescript
-const matcher = new SegmentMatcher('ping [count:number=1]');
-
-// ✅ 匹配成功 - 有空格
-matcher.match([{ type: 'text', data: { text: 'ping ' } }]);
-
-// ❌ 匹配失败 - 无空格
-matcher.match([{ type: 'text', data: { text: 'ping' } }]);
-```
-
-### 类型化参数
-自动类型转换和验证：
-
-```typescript
-const matcher = new SegmentMatcher('user <name:text> <age:number>');
-
-const result = matcher.match([
-  { type: 'text', data: { text: 'user Alice 25' } }
-]);
-
-if (result) {
-  console.log(typeof result.age); // 'number'
-  console.log(result.age); // 25
+interface MatchResult {
+  // 匹配到的消息段
+  matched: MessageSegment[];
+  
+  // 提取的参数
+  params: Record<string, any>;
+  
+  // 剩余的消息段
+  remaining: MessageSegment[];
 }
 ```
 
-### 可选参数和默认值
-灵活的参数配置：
+匹配失败时返回 `null`。
+
+## 注意事项
+
+### 空格敏感性
+
+模式中的空格必须精确匹配：
 
 ```typescript
-const matcher = new SegmentMatcher('greet [name:text=World] [count:number=1]');
+// "hello " 后面有一个空格
+const matcher = new SegmentMatcher('hello <name:text>');
 
-// 使用默认值
-const result1 = matcher.match([{ type: 'text', data: { text: 'greet' } }]);
-// result1: { name: 'World', count: 1 }
+// ✅ 正确：包含空格
+matcher.match([{ type: 'text', data: { text: 'hello Alice' } }]);
 
-// 自定义参数
-const result2 = matcher.match([{ type: 'text', data: { text: 'greet Alice 3' } }]);
-// result2: { name: 'Alice', count: 3 }
+// ❌ 错误：缺少空格
+matcher.match([{ type: 'text', data: { text: 'helloAlice' } }]);
 ```
 
-## 🤝 贡献
+### 类型安全
 
-欢迎提交 Issue 和 Pull Request！
+建议启用 TypeScript 的严格模式：
 
-- [GitHub 仓库](https://github.com/your-username/segment-matcher)
-- [问题反馈](https://github.com/your-username/segment-matcher/issues)
-- [功能建议](https://github.com/your-username/segment-matcher/discussions)
+```json
+{
+  "compilerOptions": {
+    "strict": true
+  }
+}
+```
 
-## 📄 许可证
+### 性能优化
 
-MIT License - 详见 [LICENSE](https://github.com/your-username/segment-matcher/blob/main/LICENSE) 文件 
+1. 重用匹配器实例
+   ```typescript
+   // ✅ 好的做法：创建一次，多次使用
+   const matcher = new SegmentMatcher('pattern');
+   segments.forEach(seg => matcher.match(seg));
+   
+   // ❌ 不好的做法：每次都创建新实例
+   segments.forEach(seg => new SegmentMatcher('pattern').match(seg));
+   ```
+
+2. 使用字段映射优化字段访问
+   ```typescript
+   // ✅ 好的做法：指定具体字段
+   const matcher = new SegmentMatcher('pattern', {
+     image: 'url'  // 只访问 url 字段
+   });
+   
+   // ❌ 不好的做法：不指定字段映射
+   const matcher = new SegmentMatcher('pattern');
+   ```
+
+## 更多示例
+
+查看 [指南](/guide/) 了解更多用法。
