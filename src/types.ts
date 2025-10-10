@@ -1,7 +1,7 @@
 
 // 消息段接口
 export interface MessageSegment {
-  type: string;
+  type: string|{name:string};
   data: Record<string, any>;
 }
 

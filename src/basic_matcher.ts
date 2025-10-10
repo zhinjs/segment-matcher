@@ -371,8 +371,8 @@ export class BasicMatcher {
     if (!cachedTypeCheck(segment, token.segmentType!)) {
       return { success: false };
     }
-    
-    const field = typedLiteralFieldMap?.[segment.type];
+    const type=typeof segment.type === 'string' ? segment.type : segment.type.name;
+    const field = typedLiteralFieldMap?.[type];
     if (!field || !segment.data || token.value === undefined) {
       return { success: false };
     }
