@@ -1,6 +1,6 @@
 {
   "name": "segment-matcher",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Segment Matcher - TypeScript version with dual ESM/CJS format support",
   "type": "module",
   "main": "./dist/cjs/index.cjs",
