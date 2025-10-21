@@ -76,6 +76,9 @@ export class SegmentMatcher {
    */
   constructor(public pattern: string, typedLiteralFields: FieldMappingConfig={...SegmentMatcher.DEFAULT_TYPED_LITERAL_FIELD_MAP}) {
     // 参数验证：确保模式是有效的字符串
+    if (typeof pattern !== 'string') {
+      throw new ValidationError('Pattern must be a string', 'pattern', pattern);
+    }
     // 参数验证：确保模式不为空
     if (!pattern.trim()) {
       throw new ValidationError('Pattern cannot be empty', 'pattern', pattern);
