@@ -1,5 +1,86 @@
 # 使用指南
 
+## 🌟 新特性速览
+
+### 单个文本段多参数提取
+
+现在支持从单个连续文本段中自动提取多个参数：
+
+```typescript
+const matcher = new SegmentMatcher('cmd [a:number] [b:number] [c:number]');
+
+// 单个文本段，自动提取
+matcher.match([{ type: 'text', data: { text: 'cmd 10 20 30' } }]);
+// 结果: { a: 10, b: 20, c: 30 }
+```
+
+### word 类型 - 提取单词
+
+新增 `word` 类型，用于提取非空格字符序列：
+
+```typescript
+const matcher = new SegmentMatcher('config [key:word] [value:word]');
+
+matcher.match([{ type: 'text', data: { text: 'config database mysql' } }]);
+// 结果: { key: 'database', value: 'mysql' }
+```
+
+**对比 text 类型**：
+- `word` - 匹配单个单词，不会贪婪匹配
+- `text` - 匹配所有剩余文本（贪婪）
+
+### 引号支持 - 包含空格的文本
+
+使用引号（单引号或双引号）来提取包含空格的多个 text 参数：
+
+```typescript
+const matcher = new SegmentMatcher('post [title:text] [author:word] [tags:text]');
+
+// 使用双引号
+matcher.match([{ 
+  type: 'text', 
+  data: { text: 'post "Getting Started" alice "tutorial beginner"' } 
+}]);
+// 结果: { 
+//   title: 'Getting Started', 
+//   author: 'alice', 
+//   tags: 'tutorial beginner' 
+// }
+
+// 嵌套不同类型引号
+matcher.match([{ 
+  type: 'text', 
+  data: { text: `post "It's great" bob 'He said "hello"'` } 
+}]);
+// 结果: { 
+//   title: "It's great", 
+//   author: 'bob', 
+//   tags: 'He said "hello"' 
+// }
+```
+
+**引号规则**：
+- 双引号内可以使用单引号
+- 单引号内可以使用双引号
+- 相同类型的引号不能嵌套
+
+### 智能空格处理
+
+参数间的单个空格自动处理（可选匹配）：
+
+```typescript
+const matcher = new SegmentMatcher('move [x:number] [y:number]');
+
+// 以下输入都可以匹配
+matcher.match([{ type: 'text', data: { text: 'move 10 20' } }]);   // 有空格 ✅
+matcher.match([{ type: 'text', data: { text: 'move 1020' } }]);     // 紧贴也行 ✅
+
+// 但多个空格视为字面量，必须精确匹配
+const strict = new SegmentMatcher('move  [x:number]'); // 两个空格
+strict.match([{ type: 'text', data: { text: 'move  10' } }]);  // ✅
+strict.match([{ type: 'text', data: { text: 'move 10' } }]);   // ❌
+```
+
 ## 基础概念
 
 ### 消息段

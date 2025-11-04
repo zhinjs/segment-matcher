@@ -37,7 +37,7 @@
 - 动态字段提取
 - 自定义类型规则
 
-### 🎨 特殊类型规则
+### 🎨 丰富的类型系统
 - `number`: 支持整数和小数
   ```typescript
   const matcher = new SegmentMatcher('数字<n:number>');
@@ -57,6 +57,18 @@
   ```typescript
   const matcher = new SegmentMatcher('开关<enabled:boolean>');
   // 匹配：'开关true' 或 '开关false'
+  ```
+- `word`: 非空格字符序列 ⭐ 新增
+  ```typescript
+  const matcher = new SegmentMatcher('config [key:word] [value:word]');
+  // 匹配：'config database mysql'
+  // 提取：{ key: 'database', value: 'mysql' }
+  ```
+- `text`: 文本类型，支持引号包裹 ⭐ 增强
+  ```typescript
+  const matcher = new SegmentMatcher('say [msg:text]');
+  // 使用引号：'say "hello world"' → { msg: 'hello world' }
+  // 不用引号：'say hello world' → { msg: 'hello world' }（贪婪匹配）
   ```
 
 ### 📝 参数系统
@@ -128,21 +140,61 @@ interface MatchResult {
 
 匹配失败时返回 `null`。
 
-## 注意事项
+## 新特性 ⭐
 
-### 空格敏感性
-
-模式中的空格必须精确匹配：
+### 1. 单个文本段多参数提取
 
 ```typescript
-// "hello " 后面有一个空格
-const matcher = new SegmentMatcher('hello <name:text>');
+// 支持从单个连续文本段中提取多个参数
+const matcher = new SegmentMatcher('move [x:number=0] [y:number=0]');
+const result = matcher.match([{ type: 'text', data: { text: 'move 10 20' } }]);
+console.log(result.params); // { x: 10, y: 20 }
+```
 
-// ✅ 正确：包含空格
-matcher.match([{ type: 'text', data: { text: 'hello Alice' } }]);
+### 2. 引号支持
 
-// ❌ 错误：缺少空格
-matcher.match([{ type: 'text', data: { text: 'helloAlice' } }]);
+```typescript
+// 使用引号提取多个包含空格的 text 参数
+const matcher = new SegmentMatcher('post [title:text] [tags:text]');
+
+// 双引号
+matcher.match([{ type: 'text', data: { text: 'post "My Title" "tag1 tag2"' } }]);
+// { title: 'My Title', tags: 'tag1 tag2' }
+
+// 单引号
+matcher.match([{ type: 'text', data: { text: "post 'Quick' 'tips'" } }]);
+// { title: 'Quick', tags: 'tips' }
+
+// 嵌套不同类型引号
+matcher.match([{ type: 'text', data: { text: `post "It's great" 'He said "hi"'` } }]);
+// { title: "It's great", tags: 'He said "hi"' }
+```
+
+### 3. word 类型
+
+```typescript
+// word 类型提取非空格字符，不会贪婪匹配
+const matcher = new SegmentMatcher('config [key:word] [value:word]');
+matcher.match([{ type: 'text', data: { text: 'config database mysql' } }]);
+// { key: 'database', value: 'mysql' }
+```
+
+## 注意事项
+
+### 智能空格处理 ⭐ 更新
+
+参数间的单个空格自动处理（可选匹配），多个空格视为字面量：
+
+```typescript
+// 参数间的单个空格可选
+const matcher = new SegmentMatcher('cmd [a:number] [b:number]');
+matcher.match([{ type: 'text', data: { text: 'cmd 10 20' } }]);   // ✅
+matcher.match([{ type: 'text', data: { text: 'cmd 1020' } }]);     // ✅
+
+// 多个空格必须精确匹配
+const strict = new SegmentMatcher('cmd  [a:number]'); // 两个空格
+strict.match([{ type: 'text', data: { text: 'cmd  10' } }]);  // ✅
+strict.match([{ type: 'text', data: { text: 'cmd 10' } }]);   // ❌
 ```
 
 ### 类型安全

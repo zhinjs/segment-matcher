@@ -92,6 +92,25 @@ export class FloatTypeMatcher implements TypeMatcher {
 }
 
 /**
+ * Word类型匹配器
+ * 
+ * 匹配非空格字符序列（单词）
+ * 支持：hello, world123, foo_bar, 你好
+ * 不支持：包含空格的字符串
+ */
+export class WordTypeMatcher implements TypeMatcher {
+  private readonly regex = /^\S+$/;
+
+  match(text: string): TypeMatchResult {
+    if (!this.regex.test(text)) {
+      return { success: false };
+    }
+
+    return { success: true, value: text };
+  }
+}
+
+/**
  * Boolean类型匹配器
  * 
  * 支持true/false字符串：true, false
@@ -131,6 +150,7 @@ export class TypeMatcherRegistry {
     ['integer', new IntegerTypeMatcher()],
     ['float', new FloatTypeMatcher()],
     ['boolean', new BooleanTypeMatcher()],
+    ['word', new WordTypeMatcher()],
     ['text', new TextTypeMatcher()],
   ]);
 
@@ -151,7 +171,7 @@ export class TypeMatcherRegistry {
    * @returns 是否支持特殊匹配
    */
   static hasSpecialMatcher(dataType: string): boolean {
-    // text类型不需要特殊处理，其他类型都需要
+    // text类型不需要特殊处理（贪婪匹配），其他类型都需要特殊处理
     return this.matchers.has(dataType) && dataType !== 'text';
   }
 

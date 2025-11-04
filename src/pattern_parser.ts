@@ -103,6 +103,9 @@ export class PatternParser {
         }
       }
       
+      // 优化：将参数之间的单个空格标记为可选
+      PatternParser.optimizeParameterSpaces(tokens);
+      
       // 缓存结果
       parseCache.set(pattern, tokens);
       return tokens;
@@ -116,6 +119,65 @@ export class PatternParser {
         pattern,
         i
       );
+    }
+  }
+
+  /**
+   * 优化参数之间的空格
+   * 
+   * 将参数与参数之间的单个空格标记为可选的分隔符。
+   * 超过一个空格的部分保持为必需的字面量。
+   * 
+   * 规则：
+   * 1. 如果字面量以单个空格结尾，且后面是参数，则将该空格分离为可选空格
+   * 2. 如果单个空格字面量后面是参数类型，则将该空格标记为可选
+   * 
+   * @param tokens - 解析后的令牌数组
+   */
+  private static optimizeParameterSpaces(tokens: PatternToken[]): void {
+    // 第一遍：分离字面量末尾的单个空格
+    for (let i = 0; i < tokens.length; i++) {
+      const token = tokens[i];
+      const nextToken = i < tokens.length - 1 ? tokens[i + 1] : null;
+      
+      // 检查是否为以单个空格结尾的字面量，且后面是参数
+      if (token.type === 'literal' && 
+          token.value && 
+          token.value.endsWith(' ') && 
+          !token.value.endsWith('  ') &&
+          nextToken && 
+          (nextToken.type === 'parameter' || nextToken.type === 'rest_parameter')) {
+        
+        // 将字面量分离为两部分
+        const withoutSpace = token.value.slice(0, -1);
+        
+        if (withoutSpace) {
+          // 保留去除空格后的字面量
+          token.value = withoutSpace;
+          // 插入可选的空格字面量
+          tokens.splice(i + 1, 0, PatternToken.createLiteral(' '));
+          // 标记为可选
+          tokens[i + 1].optional = true;
+        } else {
+          // 字面量只有一个空格，直接标记为可选
+          token.optional = true;
+        }
+      }
+    }
+    
+    // 第二遍：标记独立的单空格字面量（参数之间的空格）
+    for (let i = 0; i < tokens.length; i++) {
+      const token = tokens[i];
+      const nextToken = i < tokens.length - 1 ? tokens[i + 1] : null;
+      
+      // 检查是否为单个空格的字面量，且后面是参数
+      if (token.type === 'literal' && 
+          token.value === ' ' && 
+          !token.optional &&
+          nextToken && 
+          (nextToken.type === 'parameter' || nextToken.type === 'rest_parameter')) {
+        token.optional = true;
+      }
     }
   }
 
@@ -361,7 +423,7 @@ export class PatternParser {
    * @example
    * ```typescript
    * // 解析简单字面量
-   * const result1 = PatternParser.parseLiteral('hello <name>', 0);
+   * const result1 = PatternParser.parseLiteral('hello<name>', 0);
    * // result1.token.value === 'hello', result1.newIndex === 5
    * 
    * // 解析包含空格的字面量

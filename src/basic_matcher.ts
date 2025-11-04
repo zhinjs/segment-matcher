@@ -251,13 +251,14 @@ export class BasicMatcher {
       
       // 当前消息段不存在或不匹配
       if (patternToken.optional) {
-        // 处理可选参数
+        // 处理可选参数或可选字面量（如参数间的单空格）
         if (patternToken.name) {
-          // 设置默认值（无论 segment 是否匹配都返回）
+          // 可选参数：设置默认值
           const defaultValue = patternToken.defaultValue !== undefined ? patternToken.defaultValue : 
                              (patternToken.dataType === 'text' ? '' : null);
           result.addParam(patternToken.name, defaultValue);
         }
+        // 可选字面量（如参数间的单空格）：直接跳过，不需要任何处理
         patternIndex++;
         // segmentIndex 只在 segment 存在且匹配时才递增（已在上面处理）
       } else if (patternToken.type === 'rest_parameter') {
@@ -267,7 +268,7 @@ export class BasicMatcher {
         }
         patternIndex++;
       } else {
-        // 必需参数不匹配，返回 null 表示匹配失败
+        // 必需参数或必需字面量不匹配，返回 null 表示匹配失败
         return null;
       }
     }
@@ -301,7 +302,7 @@ export class BasicMatcher {
       case 'typed_literal':
         return BasicMatcher.matchTypedLiteral(token, segment, segments, segmentIndex, typedLiteralFieldMap);
       case 'parameter':
-        return BasicMatcher.matchParameter(token, segment, typedLiteralFieldMap);
+        return BasicMatcher.matchParameter(token, segment, segments, segmentIndex, typedLiteralFieldMap);
       case 'rest_parameter':
         return BasicMatcher.matchRestParameter(token, segments, segmentIndex, typedLiteralFieldMap);
       default:
@@ -415,44 +416,152 @@ export class BasicMatcher {
   }
 
   /**
+   * 解析引号包裹的文本
+   * 支持单引号和双引号，以及嵌套不同类型的引号
+   * 
+   * @param text - 输入文本
+   * @returns 解析结果，包含引号内的文本和剩余文本，如果解析失败返回 null
+   */
+  private static parseQuotedText(text: string): { quotedText: string; remainingText: string } | null {
+    if (!text || typeof text !== 'string') {
+      return null;
+    }
+
+    const firstChar = text[0];
+    if (firstChar !== '"' && firstChar !== "'") {
+      return null;
+    }
+
+    const quoteChar = firstChar;
+    let i = 1;
+    const textLength = text.length;
+
+    // 遍历字符串，查找配对的结束引号
+    while (i < textLength) {
+      const char = text[i];
+      
+      if (char === quoteChar) {
+        // 找到配对的结束引号
+        const quotedText = text.substring(1, i);
+        const remainingText = text.substring(i + 1).trim();
+        return { quotedText, remainingText };
+      }
+      
+      // 跳过当前字符（支持内嵌不同类型的引号）
+      i++;
+    }
+
+    // 没有找到配对的结束引号
+    return null;
+  }
+
+  /**
    * 匹配单个参数令牌和消息段
    * 
    * 根据参数令牌的类型和数据类型，匹配对应的消息段并提取参数值。
    * 支持特殊类型规则的自动类型转换和验证。
+   * 支持从单个文本段中部分提取参数（例如从 "100 200" 中提取 "100"）。
    * 
    * @param token - 参数令牌
    * @param segment - 消息段
+   * @param segments - 完整的消息段数组（用于插入剩余文本）
+   * @param segmentIndex - 当前消息段索引
    * @param typedLiteralFieldMap - 自定义字段映射
    * @returns 匹配响应
    */
-  private static matchParameter(token: PatternToken, segment: MessageSegment, typedLiteralFieldMap?: FieldMappingConfig): MatchResponse {
-    // 对于 text 类型的特殊处理（保持原有逻辑）
+  private static matchParameter(token: PatternToken, segment: MessageSegment, segments: MessageSegment[], segmentIndex: number, typedLiteralFieldMap?: FieldMappingConfig): MatchResponse {
+    // 对于 text 类型的特殊处理
     if (token.dataType === 'text') {
       if (segment && segment.type === 'text') {
         // 检查 text 字段是否存在
         if (!('text' in segment.data)) {
           return { success: false };
         }
+        
+        const fullText = segment.data.text;
+        
+        // 尝试解析引号包裹的文本
+        const parsed = BasicMatcher.parseQuotedText(fullText);
+        
+        if (parsed) {
+          // 成功解析引号文本
+          const matched: MessageSegment[] = [
+            { type: 'text', data: { text: parsed.quotedText } }
+          ];
+          
+          // 如果有剩余文本，插入回 segments
+          if (parsed.remainingText) {
+            optimizedArrayInsert(segments, segmentIndex + 1, {
+              type: 'text',
+              data: { text: parsed.remainingText }
+            });
+          }
+          
+          return {
+            success: true,
+            matched,
+            param: { name: token.name!, value: parsed.quotedText },
+            newSegmentIndex: segmentIndex + 1
+          };
+        }
+        
+        // 没有引号，使用原有的贪婪匹配逻辑
         return {
           success: true,
           matched: [segment],
-          param: { name: token.name!, value: segment.data.text || '' }
+          param: { name: token.name!, value: fullText || '' }
         };
       }
       return { success: false };
     }
 
-    // 使用 TypeMatcher 处理特殊类型规则
+    // 使用 TypeMatcher 处理特殊类型规则（number, integer, float, boolean 等）
     if (segment && segment.type === 'text' && TypeMatcherRegistry.hasSpecialMatcher(token.dataType!)) {
       const matcher = TypeMatcherRegistry.getMatcher(token.dataType!);
       if (matcher) {
-        const result = matcher.match(segment.data.text);
+        const fullText = segment.data.text;
+        const result = matcher.match(fullText);
+        
         if (result.success) {
+          // 整个文本段匹配成功
           return {
             success: true,
             matched: [segment],
             param: { name: token.name!, value: result.value }
           };
+        }
+        
+        // 尝试从文本段开头部分提取（例如从 "100 200" 中提取 "100"）
+        // 按空格分割，尝试匹配第一个 token
+        if (typeof fullText === 'string' && fullText.trim()) {
+          const spaceIndex = fullText.indexOf(' ');
+          if (spaceIndex > 0) {
+            const firstPart = fullText.substring(0, spaceIndex);
+            const remainingPart = fullText.substring(spaceIndex); // 包含空格
+            
+            const partialResult = matcher.match(firstPart);
+            if (partialResult.success) {
+              // 部分匹配成功，需要将剩余部分插入回 segments
+              const matched: MessageSegment[] = [
+                { type: 'text', data: { text: firstPart } }
+              ];
+              
+              // 将剩余文本插入到 segments 数组中
+              if (remainingPart) {
+                optimizedArrayInsert(segments, segmentIndex + 1, {
+                  type: 'text',
+                  data: { text: remainingPart }
+                });
+              }
+              
+              return {
+                success: true,
+                matched,
+                param: { name: token.name!, value: partialResult.value },
+                newSegmentIndex: segmentIndex + 1
+              };
+            }
+          }
         }
       }
       

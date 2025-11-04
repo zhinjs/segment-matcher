@@ -76,10 +76,12 @@ describe('SegmentMatcher', () => {
         { type: 'text', data: { text: 'hello Alice' } }
       ];
 
-      expect(matcher.getTokens().find(v => v.type === 'literal')?.value).toEqual('hello ');
+      // 新逻辑：字面量末尾的单个空格会被分离
+      expect(matcher.getTokens().find(v => v.type === 'literal' && !v.optional)?.value).toEqual('hello');
       expect(matcher.match(segments)).toEqual({
         matched: [
-          { type: 'text', data: { text: 'hello ' } },
+          { type: 'text', data: { text: 'hello' } },
+          { type: 'text', data: { text: ' ' } },
           { type: 'text', data: { text: 'Alice' } }
         ],
         params: { name: 'Alice' },
@@ -93,10 +95,12 @@ describe('SegmentMatcher', () => {
         { type: 'text', data: { text: 'ping hello' } }
       ];
 
-      expect(matcher.getTokens().find(v => v.type === 'literal')?.value).toEqual('ping ');
+      // 新逻辑：字面量末尾的单个空格会被分离
+      expect(matcher.getTokens().find(v => v.type === 'literal' && !v.optional)?.value).toEqual('ping');
       expect(matcher.match(segments)).toEqual({
         matched: [
-          { type: 'text', data: { text: 'ping ' } },
+          { type: 'text', data: { text: 'ping' } },
+          { type: 'text', data: { text: ' ' } },
           { type: 'text', data: { text: 'hello' } }
         ],
         params: { message: 'hello' },
@@ -110,7 +114,12 @@ describe('SegmentMatcher', () => {
         { type: 'text', data: { text: 'ping' } }
       ];
 
-      expect(matcher.match(segments)).toBeNull();
+      // 新逻辑：字面量末尾的单个空格是可选的，所以 'ping' 可以匹配
+      expect(matcher.match(segments)).toEqual({
+        matched: [{ type: 'text', data: { text: 'ping' } }],
+        params: { message: '' },
+        remaining: []
+      });
     });
 
     // 新增测试用例：空格敏感特性
@@ -120,8 +129,12 @@ describe('SegmentMatcher', () => {
         { type: 'text', data: { text: 'ping' } }
       ];
 
-      // 由于 literal 'ping ' 无法匹配 'ping'（缺少末尾空格），整个模式匹配失败
-      expect(matcher.match(segments)).toBeNull();
+      // 新逻辑：字面量末尾的单个空格是可选的，所以 'ping' 可以匹配
+      expect(matcher.match(segments)).toEqual({
+        matched: [{ type: 'text', data: { text: 'ping' } }],
+        params: { count: { value: 1 } },
+        remaining: []
+      });
     });
 
     // 新增测试用例：literal 匹配成功时可选参数的默认值
@@ -131,9 +144,12 @@ describe('SegmentMatcher', () => {
         { type: 'text', data: { text: 'ping ' } }
       ];
 
-      // literal 'ping ' 匹配成功，但没有提供 count 参数，使用默认值
+      // literal 'ping' 和可选空格匹配成功，但没有提供 count 参数，使用默认值
       expect(matcher.match(segments)).toEqual({
-        matched: [{ type: 'text', data: { text: 'ping ' } }],
+        matched: [
+          { type: 'text', data: { text: 'ping' } },
+          { type: 'text', data: { text: ' ' } }
+        ],
         params: { count: { value: 1 } },
         remaining: []
       });
@@ -146,6 +162,401 @@ describe('SegmentMatcher', () => {
       expect(() => matcher.match(null as any)).toThrow(ValidationError);
       expect(() => matcher.match(undefined as any)).toThrow(ValidationError);
       expect(() => matcher.match('not an array' as any)).toThrow(ValidationError);
+    });
+  });
+
+  describe('Text type with quoted strings', () => {
+    test('should handle double quoted text parameters', () => {
+      const matcher = createMatcher('say [msg1:text=hello] [msg2:text=world]');
+      
+      // 使用双引号包裹两个参数
+      let segments: MessageSegment[] = [
+        { type: 'text', data: { text: 'say "foo bar" "baz qux"' } }
+      ];
+      expect(matcher.match(segments)?.params).toEqual({ msg1: 'foo bar', msg2: 'baz qux' });
+
+      // 第一个用引号，第二个不用
+      segments = [
+        { type: 'text', data: { text: 'say "foo bar" baz' } }
+      ];
+      expect(matcher.match(segments)?.params).toEqual({ msg1: 'foo bar', msg2: 'baz' });
+    });
+
+    test('should handle single quoted text parameters', () => {
+      const matcher = createMatcher('say [msg1:text=hello] [msg2:text=world]');
+      
+      // 使用单引号包裹两个参数
+      let segments: MessageSegment[] = [
+        { type: 'text', data: { text: "say 'hello world' 'test message'" } }
+      ];
+      expect(matcher.match(segments)?.params).toEqual({ msg1: 'hello world', msg2: 'test message' });
+    });
+
+    test('should handle three text parameters with quotes', () => {
+      const matcher = createMatcher('cmd [a:text=A] [b:text=B] [c:text=C]');
+      
+      // 三个都用引号
+      let segments: MessageSegment[] = [
+        { type: 'text', data: { text: 'cmd "first text" "second text" "third text"' } }
+      ];
+      expect(matcher.match(segments)?.params).toEqual({ a: 'first text', b: 'second text', c: 'third text' });
+
+      // 部分用引号
+      segments = [
+        { type: 'text', data: { text: 'cmd "one" "two" three' } }
+      ];
+      expect(matcher.match(segments)?.params).toEqual({ a: 'one', b: 'two', c: 'three' });
+    });
+
+    test('should handle mixed types with quoted text', () => {
+      const matcher = createMatcher('post [title:text=Untitled] [count:number=0] [tags:text=none]');
+      
+      // 标题和标签都用引号
+      let segments: MessageSegment[] = [
+        { type: 'text', data: { text: 'post "My Article Title" 100 "tag1 tag2 tag3"' } }
+      ];
+      expect(matcher.match(segments)?.params).toEqual({ 
+        title: 'My Article Title', 
+        count: 100, 
+        tags: 'tag1 tag2 tag3' 
+      });
+    });
+
+    test('should handle quoted text with special characters', () => {
+      const matcher = createMatcher('echo [msg:text=default]');
+      
+      // 引号内包含特殊字符
+      let segments: MessageSegment[] = [
+        { type: 'text', data: { text: 'echo "Hello, World! @#$%"' } }
+      ];
+      expect(matcher.match(segments)?.params).toEqual({ msg: 'Hello, World! @#$%' });
+    });
+
+    test('should fall back to greedy matching without quotes', () => {
+      const matcher = createMatcher('say [msg1:text=hello] [msg2:text=world]');
+      
+      // 不使用引号，text 类型贪婪匹配
+      let segments: MessageSegment[] = [
+        { type: 'text', data: { text: 'say foo bar baz' } }
+      ];
+      expect(matcher.match(segments)?.params).toEqual({ msg1: 'foo bar baz', msg2: 'world' });
+    });
+
+    test('should handle empty quoted strings', () => {
+      const matcher = createMatcher('test [a:text=default] [b:text=default]');
+      
+      // 空引号
+      let segments: MessageSegment[] = [
+        { type: 'text', data: { text: 'test "" "value"' } }
+      ];
+      expect(matcher.match(segments)?.params).toEqual({ a: '', b: 'value' });
+    });
+
+    test('should handle nested quotes (different quote types)', () => {
+      const matcher = createMatcher('say [msg1:text=A] [msg2:text=B] [msg3:text=C]');
+      
+      // 双引号内嵌单引号
+      let segments: MessageSegment[] = [
+        { type: 'text', data: { text: `say "hello 'world'" test` } }
+      ];
+      expect(matcher.match(segments)?.params.msg1).toBe("hello 'world'");
+      expect(matcher.match(segments)?.params.msg2).toBe("test");
+
+      // 单引号内嵌双引号
+      segments = [
+        { type: 'text', data: { text: `say 'foo "bar"' test` } }
+      ];
+      expect(matcher.match(segments)?.params.msg1).toBe('foo "bar"');
+      expect(matcher.match(segments)?.params.msg2).toBe("test");
+    });
+
+    test('should handle complex nested quotes scenario', () => {
+      const matcher = createMatcher('say [msg1:text=A] [msg2:text=B] [msg3:text=C]');
+      
+      // 用户提供的复杂示例
+      let segments: MessageSegment[] = [
+        { type: 'text', data: { text: `say 'foo bar' "bar foo 'foo bar" "'foo bar'"` } }
+      ];
+      
+      const result = matcher.match(segments);
+      expect(result?.params).toEqual({
+        msg1: 'foo bar',
+        msg2: "bar foo 'foo bar",
+        msg3: "'foo bar'"
+      });
+    });
+
+    test('should handle multiple nested quotes within single parameter', () => {
+      const matcher = createMatcher('test [msg:text=default]');
+      
+      // 引号内包含多个嵌套引号
+      let segments: MessageSegment[] = [
+        { type: 'text', data: { text: `test "a'b'c'd'e"` } }
+      ];
+      expect(matcher.match(segments)?.params.msg).toBe("a'b'c'd'e");
+
+      segments = [
+        { type: 'text', data: { text: `test 'a"b"c"d"e'` } }
+      ];
+      expect(matcher.match(segments)?.params.msg).toBe('a"b"c"d"e');
+    });
+
+    test('should handle apostrophes and quotes in natural language', () => {
+      const matcher = createMatcher('say [msg:text=default]');
+      
+      // 英文缩写（撇号）
+      let segments: MessageSegment[] = [
+        { type: 'text', data: { text: `say "It's a beautiful day"` } }
+      ];
+      expect(matcher.match(segments)?.params.msg).toBe("It's a beautiful day");
+
+      // 引用语句
+      segments = [
+        { type: 'text', data: { text: `say 'He said "hello" to me'` } }
+      ];
+      expect(matcher.match(segments)?.params.msg).toBe('He said "hello" to me');
+    });
+  });
+
+  describe('Word type parameters', () => {
+    test('should handle word type (non-whitespace characters)', () => {
+      const matcher = createMatcher('say [w1:word=hello] [w2:word=world]');
+      
+      // 提供两个单词 - word 类型不会贪婪匹配
+      let segments: MessageSegment[] = [
+        { type: 'text', data: { text: 'say foo bar' } }
+      ];
+      expect(matcher.match(segments)?.params).toEqual({ w1: 'foo', w2: 'bar' });
+
+      // 提供一个单词
+      segments = [
+        { type: 'text', data: { text: 'say hi' } }
+      ];
+      expect(matcher.match(segments)?.params).toEqual({ w1: 'hi', w2: 'world' });
+      
+      // 不提供参数
+      segments = [{ type: 'text', data: { text: 'say' } }];
+      expect(matcher.match(segments)?.params).toEqual({ w1: 'hello', w2: 'world' });
+    });
+
+    test('should handle multiple word parameters', () => {
+      const matcher = createMatcher('cmd [a:word=default1] [b:word=default2] [c:word=default3]');
+      
+      // 提供全部三个单词
+      let segments: MessageSegment[] = [
+        { type: 'text', data: { text: 'cmd apple banana cherry' } }
+      ];
+      expect(matcher.match(segments)?.params).toEqual({ a: 'apple', b: 'banana', c: 'cherry' });
+
+      // 提供两个单词
+      segments = [
+        { type: 'text', data: { text: 'cmd one two' } }
+      ];
+      expect(matcher.match(segments)?.params).toEqual({ a: 'one', b: 'two', c: 'default3' });
+    });
+
+    test('should handle mixed word and number types', () => {
+      const matcher = createMatcher('set [name:word=config] [value:number=0] [unit:word=px]');
+      
+      // 提供全部参数
+      let segments: MessageSegment[] = [
+        { type: 'text', data: { text: 'set width 100 em' } }
+      ];
+      expect(matcher.match(segments)?.params).toEqual({ name: 'width', value: 100, unit: 'em' });
+
+      // 部分参数
+      segments = [
+        { type: 'text', data: { text: 'set height 50' } }
+      ];
+      expect(matcher.match(segments)?.params).toEqual({ name: 'height', value: 50, unit: 'px' });
+    });
+
+    test('word type should support various characters', () => {
+      const matcher = createMatcher('test [word:word=default]');
+      
+      // 字母数字
+      expect(matcher.match([{ type: 'text', data: { text: 'test hello123' } }])?.params.word).toBe('hello123');
+      
+      // 下划线
+      expect(matcher.match([{ type: 'text', data: { text: 'test foo_bar' } }])?.params.word).toBe('foo_bar');
+      
+      // 中文
+      expect(matcher.match([{ type: 'text', data: { text: 'test 你好' } }])?.params.word).toBe('你好');
+      
+      // 特殊字符
+      expect(matcher.match([{ type: 'text', data: { text: 'test @user' } }])?.params.word).toBe('@user');
+    });
+  });
+
+  describe('Multiple optional parameters with space optimization', () => {
+    test('should handle two optional number parameters - all provided', () => {
+      const matcher = createMatcher('test [num1:number=10] [num2:number=20]');
+      // 支持单个连续文本段，匹配器会自动提取参数
+      const segments: MessageSegment[] = [
+        { type: 'text', data: { text: 'test 100 200' } }
+      ];
+
+      expect(matcher.match(segments)).toEqual({
+        matched: [
+          { type: 'text', data: { text: 'test' } },
+          { type: 'text', data: { text: ' ' } },
+          { type: 'text', data: { text: '100' } },
+          { type: 'text', data: { text: ' ' } },
+          { type: 'text', data: { text: '200' } }
+        ],
+        params: { num1: 100, num2: 200 },
+        remaining: []
+      });
+    });
+
+    test('should handle two optional number parameters - only first provided', () => {
+      const matcher = createMatcher('test [num1:number=10] [num2:number=20]');
+      const segments: MessageSegment[] = [
+        { type: 'text', data: { text: 'test 100' } }
+      ];
+
+      expect(matcher.match(segments)).toEqual({
+        matched: [
+          { type: 'text', data: { text: 'test' } },
+          { type: 'text', data: { text: ' ' } },
+          { type: 'text', data: { text: '100' } }
+        ],
+        params: { num1: 100, num2: 20 },
+        remaining: []
+      });
+    });
+
+    test('should handle two optional number parameters - none provided', () => {
+      const matcher = createMatcher('test [num1:number=10] [num2:number=20]');
+      const segments: MessageSegment[] = [
+        { type: 'text', data: { text: 'test' } }
+      ];
+
+      expect(matcher.match(segments)).toEqual({
+        matched: [{ type: 'text', data: { text: 'test' } }],
+        params: { num1: 10, num2: 20 },
+        remaining: []
+      });
+    });
+
+    test('should handle three optional parameters with text in middle (text is greedy)', () => {
+      const matcher = createMatcher('cmd [a:number=1] [b:text=hello] [c:number=3]');
+      
+      // 注意：text 类型参数会贪婪匹配所有剩余文本
+      // 因此 b 会匹配 "20 30"，c 无法获取值（使用默认值）
+      
+      // 提供全部三个参数 - 单个连续文本段
+      let segments: MessageSegment[] = [
+        { type: 'text', data: { text: 'cmd 10 20 30' } }
+      ];
+      expect(matcher.match(segments)?.params).toEqual({ a: 10, b: '20 30', c: 3 });
+
+      // 提供两个参数 - 单个连续文本段
+      segments = [
+        { type: 'text', data: { text: 'cmd 10 hello' } }
+      ];
+      expect(matcher.match(segments)?.params).toEqual({ a: 10, b: 'hello', c: 3 });
+
+      // 提供一个参数 - 单个连续文本段
+      segments = [
+        { type: 'text', data: { text: 'cmd 10' } }
+      ];
+      expect(matcher.match(segments)?.params).toEqual({ a: 10, b: 'hello', c: 3 });
+
+      // 不提供参数
+      segments = [{ type: 'text', data: { text: 'cmd' } }];
+      expect(matcher.match(segments)?.params).toEqual({ a: 1, b: 'hello', c: 3 });
+    });
+
+    test('should handle three optional parameters with text at end (recommended)', () => {
+      // 推荐做法：将 text 类型参数放在最后，避免贪婪匹配影响后续参数
+      const matcher = createMatcher('cmd [a:number=1] [c:number=3] [b:text=hello]');
+      
+      // 提供全部三个参数 - 单个连续文本段
+      let segments: MessageSegment[] = [
+        { type: 'text', data: { text: 'cmd 10 20 world' } }
+      ];
+      expect(matcher.match(segments)?.params).toEqual({ a: 10, c: 20, b: 'world' });
+
+      // 提供两个参数 - 单个连续文本段
+      segments = [
+        { type: 'text', data: { text: 'cmd 10 20' } }
+      ];
+      expect(matcher.match(segments)?.params).toEqual({ a: 10, c: 20, b: 'hello' });
+
+      // 提供一个参数 - 单个连续文本段
+      segments = [
+        { type: 'text', data: { text: 'cmd 10' } }
+      ];
+      expect(matcher.match(segments)?.params).toEqual({ a: 10, c: 3, b: 'hello' });
+
+      // 不提供参数
+      segments = [{ type: 'text', data: { text: 'cmd' } }];
+      expect(matcher.match(segments)?.params).toEqual({ a: 1, c: 3, b: 'hello' });
+    });
+
+    test('should handle mixed required and optional parameters', () => {
+      const matcher = createMatcher('hello <name:text> [age:number=18]');
+      
+      // 注意：text 类型参数会贪婪匹配所有剩余文本
+      // 如果需要提取两个参数，需要将它们分段
+      
+      // 提供所有参数
+      let segments: MessageSegment[] = [
+        { type: 'text', data: { text: 'hello ' } },
+        { type: 'text', data: { text: 'Alice' } },
+        { type: 'text', data: { text: ' ' } },
+        { type: 'text', data: { text: '25' } }
+      ];
+      expect(matcher.match(segments)?.params).toEqual({ name: 'Alice', age: 25 });
+      
+      // 只提供必需参数
+      segments = [
+        { type: 'text', data: { text: 'hello Bob' } }
+      ];
+      expect(matcher.match(segments)?.params).toEqual({ name: 'Bob', age: 18 });
+
+      // 不提供必需参数应该失败
+      segments = [{ type: 'text', data: { text: 'hello' } }];
+      expect(matcher.match(segments)).toBeNull();
+    });
+
+    test('should handle optional parameters without spaces between segments', () => {
+      const matcher = createMatcher('move [x:number=0] [y:number=0]');
+      
+      // 没有空格段
+      const segments: MessageSegment[] = [
+        { type: 'text', data: { text: 'move' } },
+        { type: 'text', data: { text: '10' } },
+        { type: 'text', data: { text: '20' } }
+      ];
+      expect(matcher.match(segments)?.params).toEqual({ x: 10, y: 20 });
+    });
+
+    test('should handle optional text parameters', () => {
+      const matcher = createMatcher('say [word1:text=hello] [word2:text=world]');
+      
+      // 注意：text 类型参数会贪婪匹配所有剩余文本
+      // 如果需要提取两个 text 参数，需要将它们分段输入
+      
+      // 提供两个文本参数（需要分段）
+      let segments: MessageSegment[] = [
+        { type: 'text', data: { text: 'say ' } },
+        { type: 'text', data: { text: 'foo' } },
+        { type: 'text', data: { text: ' ' } },
+        { type: 'text', data: { text: 'bar' } }
+      ];
+      expect(matcher.match(segments)?.params).toEqual({ word1: 'foo', word2: 'bar' });
+
+      // 提供一个参数 - 单个连续文本段
+      segments = [
+        { type: 'text', data: { text: 'say hi' } }
+      ];
+      expect(matcher.match(segments)?.params).toEqual({ word1: 'hi', word2: 'world' });
+      
+      // 不提供参数
+      segments = [{ type: 'text', data: { text: 'say' } }];
+      expect(matcher.match(segments)?.params).toEqual({ word1: 'hello', word2: 'world' });
     });
   });
 
@@ -886,9 +1297,8 @@ describe('SegmentMatcher', () => {
         const matcher = createMatcher('hello <name:text>');
         const tokens = matcher.getTokens();
 
-        // 模拟未知令牌类型
-        const originalType = tokens[1].type;
-        (tokens[1] as any).type = 'unknown';
+        const originalType = tokens[2].type;
+        (tokens[2] as any).type = 'unknown';
 
         const segments: MessageSegment[] = [
           { type: 'text', data: { text: 'hello Alice' } }
@@ -897,7 +1307,7 @@ describe('SegmentMatcher', () => {
         expect(matcher.match(segments)).toEqual(null);
 
         // 恢复原始类型
-        (tokens[1] as any).type = originalType;
+        (tokens[2] as any).type = originalType;
       });
     });
 
@@ -906,20 +1316,25 @@ describe('SegmentMatcher', () => {
         const matcher = createMatcher('hello <name:text> [count:number={value:1}]');
         const tokens = matcher.getTokens();
 
-        expect(tokens).toHaveLength(4);
+        // 新逻辑：字面量末尾的单个空格会被分离为可选的空格 token
+        expect(tokens).toHaveLength(5);
         expect(tokens[0].type).toBe('literal');
-        expect(tokens[0].value).toBe('hello ');
-        expect(tokens[1].type).toBe('parameter');
-        expect(tokens[1].name).toBe('name');
-        expect(tokens[1].dataType).toBe('text');
-        expect(tokens[1].optional).toBe(false);
-        expect(tokens[2].type).toBe('literal');
-        expect(tokens[2].value).toBe(' ');
-        expect(tokens[3].type).toBe('parameter');
-        expect(tokens[3].name).toBe('count');
-        expect(tokens[3].dataType).toBe('number');
+        expect(tokens[0].value).toBe('hello');
+        expect(tokens[1].type).toBe('literal');
+        expect(tokens[1].value).toBe(' ');
+        expect(tokens[1].optional).toBe(true);
+        expect(tokens[2].type).toBe('parameter');
+        expect(tokens[2].name).toBe('name');
+        expect(tokens[2].dataType).toBe('text');
+        expect(tokens[2].optional).toBe(false);
+        expect(tokens[3].type).toBe('literal');
+        expect(tokens[3].value).toBe(' ');
         expect(tokens[3].optional).toBe(true);
-        expect(tokens[3].defaultValue).toEqual({ value: 1 });
+        expect(tokens[4].type).toBe('parameter');
+        expect(tokens[4].name).toBe('count');
+        expect(tokens[4].dataType).toBe('number');
+        expect(tokens[4].optional).toBe(true);
+        expect(tokens[4].defaultValue).toEqual({ value: 1 });
       });
 
       // 新增测试用例：获取令牌

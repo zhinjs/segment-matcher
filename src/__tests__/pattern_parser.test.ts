@@ -14,25 +14,33 @@ describe('PatternParser', () => {
     test('should parse pattern with required parameter', () => {
       const tokens = PatternParser.parse('hello <name:text>');
       
-      expect(tokens).toHaveLength(2);
+      // 新逻辑：字面量末尾的单个空格会被分离为可选的空格 token
+      expect(tokens).toHaveLength(3);
       expect(tokens[0].type).toBe('literal');
-      expect(tokens[0].value).toBe('hello ');
-      expect(tokens[1].type).toBe('parameter');
-      expect(tokens[1].name).toBe('name');
-      expect(tokens[1].dataType).toBe('text');
-      expect(tokens[1].optional).toBe(false);
+      expect(tokens[0].value).toBe('hello');
+      expect(tokens[1].type).toBe('literal');
+      expect(tokens[1].value).toBe(' ');
+      expect(tokens[1].optional).toBe(true);
+      expect(tokens[2].type).toBe('parameter');
+      expect(tokens[2].name).toBe('name');
+      expect(tokens[2].dataType).toBe('text');
+      expect(tokens[2].optional).toBe(false);
     });
 
     test('should parse pattern with optional parameter', () => {
       const tokens = PatternParser.parse('ping [message:text]');
       
-      expect(tokens).toHaveLength(2);
+      // 新逻辑：字面量末尾的单个空格会被分离为可选的空格 token
+      expect(tokens).toHaveLength(3);
       expect(tokens[0].type).toBe('literal');
-      expect(tokens[0].value).toBe('ping ');
-      expect(tokens[1].type).toBe('parameter');
-      expect(tokens[1].name).toBe('message');
-      expect(tokens[1].dataType).toBe('text');
+      expect(tokens[0].value).toBe('ping');
+      expect(tokens[1].type).toBe('literal');
+      expect(tokens[1].value).toBe(' ');
       expect(tokens[1].optional).toBe(true);
+      expect(tokens[2].type).toBe('parameter');
+      expect(tokens[2].name).toBe('message');
+      expect(tokens[2].dataType).toBe('text');
+      expect(tokens[2].optional).toBe(true);
     });
 
     test('should parse pattern with typed literal', () => {
@@ -71,24 +79,30 @@ describe('PatternParser', () => {
     test('should parse complex pattern', () => {
       const tokens = PatternParser.parse('hello <name:text> [count:number={value:1}] [...rest]');
       
-      expect(tokens).toHaveLength(6);
+      // 新逻辑：字面量末尾的单个空格会被分离为可选的空格 token
+      expect(tokens).toHaveLength(7);
       expect(tokens[0].type).toBe('literal');
-      expect(tokens[0].value).toBe('hello ');
-      expect(tokens[1].type).toBe('parameter');
-      expect(tokens[1].name).toBe('name');
-      expect(tokens[1].dataType).toBe('text');
-      expect(tokens[1].optional).toBe(false);
-      expect(tokens[2].type).toBe('literal');
-      expect(tokens[2].value).toBe(' ');
-      expect(tokens[3].type).toBe('parameter');
-      expect(tokens[3].name).toBe('count');
-      expect(tokens[3].dataType).toBe('number');
+      expect(tokens[0].value).toBe('hello');
+      expect(tokens[1].type).toBe('literal');
+      expect(tokens[1].value).toBe(' ');
+      expect(tokens[1].optional).toBe(true);
+      expect(tokens[2].type).toBe('parameter');
+      expect(tokens[2].name).toBe('name');
+      expect(tokens[2].dataType).toBe('text');
+      expect(tokens[2].optional).toBe(false);
+      expect(tokens[3].type).toBe('literal');
+      expect(tokens[3].value).toBe(' ');
       expect(tokens[3].optional).toBe(true);
-      expect(tokens[3].defaultValue).toEqual({ value: 1 });
-      expect(tokens[4].type).toBe('literal');
-      expect(tokens[4].value).toBe(' ');
-      expect(tokens[5].type).toBe('rest_parameter');
-      expect(tokens[5].name).toBe('rest');
+      expect(tokens[4].type).toBe('parameter');
+      expect(tokens[4].name).toBe('count');
+      expect(tokens[4].dataType).toBe('number');
+      expect(tokens[4].optional).toBe(true);
+      expect(tokens[4].defaultValue).toEqual({ value: 1 });
+      expect(tokens[5].type).toBe('literal');
+      expect(tokens[5].value).toBe(' ');
+      expect(tokens[5].optional).toBe(true);
+      expect(tokens[6].type).toBe('rest_parameter');
+      expect(tokens[6].name).toBe('rest');
     });
 
     test('should parse pattern with empty literal', () => {
@@ -112,11 +126,15 @@ describe('PatternParser', () => {
     test('should parse pattern with special characters in literal', () => {
       const tokens = PatternParser.parse('!@#$%^&*() <name:text>');
       
-      expect(tokens).toHaveLength(2);
+      // 新逻辑：字面量末尾的单个空格会被分离为可选的空格 token
+      expect(tokens).toHaveLength(3);
       expect(tokens[0].type).toBe('literal');
-      expect(tokens[0].value).toBe('!@#$%^&*() ');
-      expect(tokens[1].type).toBe('parameter');
-      expect(tokens[1].name).toBe('name');
+      expect(tokens[0].value).toBe('!@#$%^&*()');
+      expect(tokens[1].type).toBe('literal');
+      expect(tokens[1].value).toBe(' ');
+      expect(tokens[1].optional).toBe(true);
+      expect(tokens[2].type).toBe('parameter');
+      expect(tokens[2].name).toBe('name');
     });
 
     test('should parse pattern with URL in typed literal', () => {
@@ -244,11 +262,15 @@ describe('PatternParser', () => {
     test('should parse pattern with multiple consecutive literals', () => {
       const tokens = PatternParser.parse('hello world <name:text>');
       
-      expect(tokens).toHaveLength(2);
+      // 新逻辑：字面量末尾的单个空格会被分离为可选的空格 token
+      expect(tokens).toHaveLength(3);
       expect(tokens[0].type).toBe('literal');
-      expect(tokens[0].value).toBe('hello world ');
-      expect(tokens[1].type).toBe('parameter');
-      expect(tokens[1].name).toBe('name');
+      expect(tokens[0].value).toBe('hello world');
+      expect(tokens[1].type).toBe('literal');
+      expect(tokens[1].value).toBe(' ');
+      expect(tokens[1].optional).toBe(true);
+      expect(tokens[2].type).toBe('parameter');
+      expect(tokens[2].name).toBe('name');
     });
 
     test('should parse pattern with mixed content', () => {
